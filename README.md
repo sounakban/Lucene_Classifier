@@ -1,1 +1,1 @@
-# TREC Collection Indexer and Retriever
+# Classification with lucene [In progress]
