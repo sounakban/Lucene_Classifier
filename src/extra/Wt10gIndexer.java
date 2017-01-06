@@ -6,8 +6,10 @@
  *      2 - fullContent of the document (including tags) FOR 1st level Retrieval
  */
 
-package classifier;
+package extra;
 
+import classifier.TrecDocIterator;
+import classifier.WebDocIterator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;

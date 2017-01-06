@@ -41,6 +41,7 @@ public class CollectionSearcher {
     IndexReader     reader;
     IndexSearcher   searcher;
     String          indexPath;
+    Path            indexpath;
     File            indexFile;
     String          stopFilePath;
     String          queryPath;
@@ -81,7 +82,7 @@ public class CollectionSearcher {
         indexPath = prop.getProperty("indexPath");
         indexFile = new File(indexPath);
         Directory indexDir = FSDirectory.open(indexFile);*/
-        Path indexpath = FileSystems.getDefault().getPath(prop.getProperty("indexPath"));
+        indexpath = FileSystems.getDefault().getPath(prop.getProperty("indexPath"));
         Directory indexDir = FSDirectory.open(indexpath);
 
         if (!DirectoryReader.indexExists(indexDir)) {

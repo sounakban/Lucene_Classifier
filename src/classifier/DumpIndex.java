@@ -41,6 +41,8 @@ class TermPosition {
     }
     
 }
+
+
 public class DumpIndex {
 
     Properties  prop;               // prop of the init.properties file

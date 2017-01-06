@@ -3,7 +3,7 @@
  * Indexes total content of each documents.<p>
  */
 
-package classifier;
+package extra;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

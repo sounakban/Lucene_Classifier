@@ -1,5 +1,5 @@
 
-package classifier;
+package extra;
 
 import common.CommonVariables;
 import java.io.BufferedWriter;
@@ -31,16 +31,6 @@ public class GetAllDocIds {
         this.dumpPath = dumpPath;
     }
 
-    
-    public static void main(String[] args) throws IOException {
-
-        GetAllDocIds obj = new GetAllDocIds(new File("/store/collections/indexed/trec678"), 
-            "/home/dwaipayan/trec678.docid");
-        System.out.println("Writing docId from index: "+obj.indexFile.getAbsolutePath()+
-            " in: "+obj.dumpPath);
-        obj.getAllDocIds();
-    }
-
     /**
      * 
      * @throws IOException 
@@ -64,5 +54,15 @@ public class GetAllDocIds {
         }
         bufferWritter.close();
 
+    }
+
+    
+    public static void main(String[] args) throws IOException {
+
+        GetAllDocIds obj = new GetAllDocIds(new File("/store/collections/indexed/trec678"), 
+            "/home/dwaipayan/trec678.docid");
+        System.out.println("Writing docId from index: "+obj.indexFile.getAbsolutePath()+
+            " in: "+obj.dumpPath);
+        obj.getAllDocIds();
     }
 }
