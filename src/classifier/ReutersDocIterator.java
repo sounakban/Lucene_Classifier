@@ -36,7 +36,7 @@ import org.apache.lucene.document.FieldType;
  *
  * @author dwaipayan
  */
-public class TrecDocIterator implements Iterator<Document> {
+public class ReutersDocIterator implements Iterator<Document> {
 
 	protected BufferedReader rdr;
 	protected boolean at_eof = false;
@@ -45,23 +45,23 @@ public class TrecDocIterator implements Iterator<Document> {
         String      dumpPath;
         Properties prop;
 
-	public TrecDocIterator(File file) throws FileNotFoundException {
+	public ReutersDocIterator(File file) throws FileNotFoundException {
             rdr = new BufferedReader(new FileReader(file));
 	}
 
-	public TrecDocIterator(File file, CommandLineIndexing obj) throws FileNotFoundException, IOException {
+	public ReutersDocIterator(File file, CommandLineIndexing obj) throws FileNotFoundException, IOException {
             rdr = new BufferedReader(new FileReader(file));
             this.analyzer = obj.analyzer;
             this.prop = prop;
 	}
 
-	public TrecDocIterator(File file, Analyzer analyzer, Properties prop) throws FileNotFoundException, IOException {
+	public ReutersDocIterator(File file, Analyzer analyzer, Properties prop) throws FileNotFoundException, IOException {
             rdr = new BufferedReader(new FileReader(file));
             this.analyzer = analyzer;
             this.prop = prop;
 	}
 
-        public TrecDocIterator(File file, Analyzer analyzer, String toStore, String dumpPath) throws FileNotFoundException{
+        public ReutersDocIterator(File file, Analyzer analyzer, String toStore, String dumpPath) throws FileNotFoundException{
             rdr = new BufferedReader(new FileReader(file));
             this.analyzer = analyzer;
             this.toStore = toStore;
