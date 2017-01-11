@@ -1,7 +1,5 @@
 /**
- * Index TREC document collections dropping all the HTML tags and URLs
- * Removes ':', '_'
- * Tested for TREC Disk 1-5.
+ * Index RCV1 document collections
  */
 
 package classifier;
@@ -25,43 +23,67 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
-import static common.CommonVariables.FIELD_BOW;
-import static common.CommonVariables.FIELD_ID;
+//import static common.CommonVariables.FIELD_BOW;
+//import static common.CommonVariables.FIELD_ID;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.lucene.document.FieldType;
 /*import org.apache.lucene.document.TextField;*/
 
+
+/*
+#############For Stopword removal
+public static String removeStopWords(String textFile) throws Exception {
+    CharArraySet stopWords = EnglishAnalyzer.getDefaultStopSet();
+    TokenStream tokenStream = new StandardTokenizer(Version.LUCENE_48, new StringReader(textFile.trim()));
+
+    tokenStream = new StopFilter(Version.LUCENE_48, tokenStream, stopWords);
+    StringBuilder sb = new StringBuilder();
+    CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+    tokenStream.reset();
+    while (tokenStream.incrementToken()) {
+        String term = charTermAttribute.toString();
+        sb.append(term + " ");
+    }
+    return sb.toString();
+}
+*/
+
+
+
+
+
+
 /**
  *
- * @author dwaipayan
+ * @author sounakbanerjee
  */
-public class ReutersDocIterator implements Iterator<Document> {
+public class RCVDocIterator implements Iterator<Document> {
 
 	protected BufferedReader rdr;
 	protected boolean at_eof = false;
-        Analyzer analyzer;
+        Analyzer    analyzer;
         String      toStore;
         String      dumpPath;
-        Properties prop;
+        Properties  prop;
 
-	public ReutersDocIterator(File file) throws FileNotFoundException {
+	public RCVDocIterator(File file) throws FileNotFoundException {
             rdr = new BufferedReader(new FileReader(file));
 	}
 
-	public ReutersDocIterator(File file, CommandLineIndexing obj) throws FileNotFoundException, IOException {
+	public RCVDocIterator(File file, CommandLineIndexing obj) throws FileNotFoundException, IOException {
             rdr = new BufferedReader(new FileReader(file));
             this.analyzer = obj.analyzer;
             this.prop = prop;
 	}
 
-	public ReutersDocIterator(File file, Analyzer analyzer, Properties prop) throws FileNotFoundException, IOException {
+	public RCVDocIterator(File file, Analyzer analyzer, Properties prop) throws FileNotFoundException, IOException {
             rdr = new BufferedReader(new FileReader(file));
             this.analyzer = analyzer;
             this.prop = prop;
 	}
 
-        public ReutersDocIterator(File file, Analyzer analyzer, String toStore, String dumpPath) throws FileNotFoundException{
+        public RCVDocIterator(File file, Analyzer analyzer, String toStore, String dumpPath) throws FileNotFoundException{
             rdr = new BufferedReader(new FileReader(file));
             this.analyzer = analyzer;
             this.toStore = toStore;
@@ -73,11 +95,13 @@ public class ReutersDocIterator implements Iterator<Document> {
             return !at_eof;
 	}
 
+        
         /**
          * Removes the HTML tags from 'str' and returns the resultant string
          * @param str
          * @return 
-         */
+         
+        
         public String removeHTMLTags(String str) {
             String tagPatternStr = "<[^>\\n]*[>\\n]";
             Pattern tagPattern = Pattern.compile(tagPatternStr);
@@ -85,19 +109,8 @@ public class ReutersDocIterator implements Iterator<Document> {
             Matcher m = tagPattern.matcher(str);
             return m.replaceAll(" ");
         }
+        */
 
-        /**
-         * Removes URLs from 'str' and returns the resultant string
-         * @param str
-         * @return 
-         */
-        public String removeURL(String str) {
-            String urlPatternStr = "\\b((https?|ftp|file)://|www)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
-            Pattern urlPattern = Pattern.compile(urlPatternStr);
-
-            Matcher m = urlPattern.matcher(str);
-            return m.replaceAll(" ");
-        }
 
         /**
          * Returns the next document in the collection, setting FIELD_ID and FIELD_BOW.
@@ -108,6 +121,8 @@ public class ReutersDocIterator implements Iterator<Document> {
             Document doc = new Document();
             StringBuffer sb = new StringBuffer();
 
+            
+        /*
             // +++ For replacing characters- ':','_'
             Map<String, String> replacements = new HashMap<String, String>() {{
                 put(":", " ");
@@ -118,6 +133,8 @@ public class ReutersDocIterator implements Iterator<Document> {
             Pattern p = Pattern.compile(regExp);
             // --- For replacing characters- ':','_'
 
+        */
+        
             try {
                 String line;
                 boolean in_doc = false;
