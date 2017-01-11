@@ -181,10 +181,11 @@ public class RCVDocIterator implements Iterator<Document> {
                     sb.append(" ");
                 }
 
+                
                 if (sb.length() > 0) {
-                    //doc.add(new TextField(CommandLineIndexing.FIELD_BOW, sb.toString(), Field.Store.YES));
-                    String txt = removeHTMLTags(sb.toString()); // remove all html-like tags (e.g. <xyz>)
-                    txt = removeURL(txt);
+                /*
+                    //String txt = removeHTMLTags(sb.toString()); // remove all html-like tags (e.g. <xyz>)
+                    //txt = removeURL(txt);
 
                     // +++ For replacing characters- ':','_'
                     StringBuffer temp = new StringBuffer();
@@ -197,6 +198,8 @@ public class RCVDocIterator implements Iterator<Document> {
                     m.appendTail(temp);
                     txt = temp.toString();
                     // --- For replacing characters- ':','_'
+                    */
+                    String txt=sb.toString();
 
                     StringBuffer tokenizedContentBuff = new StringBuffer();
 
