@@ -138,7 +138,6 @@ public class RCVDocIterator implements Iterator<Document> {
             try {
                 String line;
                 boolean in_doc = false;
-                String doc_no = null;
 
                 while (true) {
                     line = rdr.readLine();
@@ -149,33 +148,93 @@ public class RCVDocIterator implements Iterator<Document> {
                     }
                     else
                         line = line.trim();
+                    
+                    // Remove Tag Lines
+                    if (line.startsWith(ReutersTags.RCV_FILE_START))
+                        continue;
 
                     // <DOC>
                     if (!in_doc) {
-                        if (line.startsWith("<DOC>"))
+                        if (line.startsWith(ReutersTags.RCV_FILE_START))
                             in_doc = true;
                         else
                             continue;
                     }
-                    if (line.contains("</DOC>")) {
+                    if (line.contains(ReutersTags.RCV_FILE_END)) {
                         in_doc = false;
                         sb.append(line);
                         break;
                     }
-                    // </DOC>
 
-                    // <DOCNO>
-                    if(line.startsWith("<DOCNO>")) {
-                        doc_no = line;
-                        while(!line.endsWith("</DOCNO>")) {
-                            line = rdr.readLine().trim();
-                            doc_no = doc_no + line;
-                        }
-                        doc_no = doc_no.replace("<DOCNO>", "").replace("</DOCNO>", "").trim();
-                        doc.add(new StringField(FIELD_ID, doc_no, Field.Store.YES));
+                    // Id
+                    if(line.startsWith(ReutersTags.RCV_INFO)) {
+                        String str = line.split(" ")[1];
+                        str = str.replace(ReutersTags.RCV_DOCID, "").replace("\"", "").trim();
+                        doc.add(new StringField(ReutersFields.DOCID, str, Field.Store.YES));
                         continue;   // start reading the next line
                     }
-                    // </DOCNO>
+
+                    // Title
+                    if(line.startsWith(ReutersTags.RCV_TITLE_START)) {
+                        String str = line.replace(ReutersTags.RCV_TITLE_START, "").replace(ReutersTags.RCV_TITLE_END, "").trim();
+                        doc.add(new StringField(ReutersFields.TITLE, str, Field.Store.YES));
+                        continue;   // start reading the next line
+                    }
+
+                    // Headline
+                    if(line.startsWith(ReutersTags.RCV_HEADLINE_START)) {
+                        String str = line.replace(ReutersTags.RCV_HEADLINE_START, "").replace(ReutersTags.RCV_HEADLINE_END, "").trim();
+                        doc.add(new StringField(ReutersFields.HEADLINE, str, Field.Store.YES));
+                        continue;   // start reading the next line
+                    }
+
+                    // Topic
+                    if(line.startsWith(ReutersTags.RCV_CODES_TOPIC)) {
+                        StringBuilder str = new StringBuilder("");
+                        while (!line.contains(ReutersTags.RCV_CODES_END)) {
+                            line = rdr.readLine();
+                            if(line.startsWith(ReutersTags.RCV_CODES)) {
+                                str.append(line.replace(ReutersTags.RCV_CODES, "").replace("\"", "").replace(">", "").trim());
+                                str.append(",");
+                            }
+                        }
+                        str.deleteCharAt(str.length()-1);         //Remove last comma
+                        String save = str.toString();
+                        doc.add(new StringField(ReutersFields.CODES_TOPIC, save, Field.Store.YES));
+                        continue;   // start reading the next line
+                    }
+
+                    // Country
+                    if(line.startsWith(ReutersTags.RCV_CODES_COUNTRY)) {
+                        StringBuilder str = new StringBuilder("");
+                        while (!line.contains(ReutersTags.RCV_CODES_END)) {
+                            line = rdr.readLine();
+                            if(line.startsWith(ReutersTags.RCV_CODES)) {
+                                str.append(line.replace(ReutersTags.RCV_CODES, "").replace("\"", "").replace(">", "").trim());
+                                str.append(",");
+                            }
+                        }
+                        str.deleteCharAt(str.length()-1);         //Remove last comma
+                        String save = str.toString();
+                        doc.add(new StringField(ReutersFields.CODES_COUNTRY, save, Field.Store.YES));
+                        continue;   // start reading the next line
+                    }
+
+                    // Industry
+                    if(line.startsWith(ReutersTags.RCV_CODES_INDUSTRY)) {
+                        StringBuilder str = new StringBuilder("");
+                        while (!line.contains(ReutersTags.RCV_CODES_END)) {
+                            line = rdr.readLine();
+                            if(line.startsWith(ReutersTags.RCV_CODES)) {
+                                str.append(line.replace(ReutersTags.RCV_CODES, "").replace("\"", "").replace(">", "").trim());
+                                str.append(",");
+                            }
+                        }
+                        str.deleteCharAt(str.length()-1);         //Remove last comma
+                        String save = str.toString();
+                        doc.add(new StringField(ReutersFields.CODES_INDUSTRY, save, Field.Store.YES));
+                        continue;   // start reading the next line
+                    }
 
                     sb.append(line);
                     sb.append(" ");
@@ -199,7 +258,9 @@ public class RCVDocIterator implements Iterator<Document> {
                     txt = temp.toString();
                     // --- For replacing characters- ':','_'
                     */
-                    String txt=sb.toString();
+                    sb.replace(ReutersTags.RCV_PARA_BEGIN, "");
+                    sb.replace(ReutersTags.RCV_PARA_END, "");
+                    String txt = sb.toString();
 
                     StringBuffer tokenizedContentBuff = new StringBuffer();
 

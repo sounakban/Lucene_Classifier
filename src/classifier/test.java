@@ -20,7 +20,16 @@ public class test {
     public static void main(String[] args) {
         
         // ###########Find variable types and content#########
+        println("\n"+"###########Find variable types and content#########");
         println("Field_ID : type : "+FIELD_ID.getClass().getName()+"     Content : "+FIELD_ID);
         println("Field_BOW : type : "+FIELD_BOW.getClass().getName()+"     Content : "+FIELD_BOW);
+        
+        // ###########String Builder Experiments#########
+        println("\n"+"###########String Builder Experiments#########");
+        StringBuilder sb = new StringBuilder("");
+        sb.append("test");
+        println("Test to see StrBld: "+sb);
+        sb.deleteCharAt(sb.length()-1);
+        println("After deleteCharAt: "+sb);
     }
 }

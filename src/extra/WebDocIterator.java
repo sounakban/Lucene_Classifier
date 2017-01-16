@@ -5,8 +5,9 @@
  * Tested for WT2G and GOV2 Collection.
  */
 
-package classifier;
+package extra;
 
+import classifier.CommandLineIndexing;
 import static common.CommonVariables.FIELD_BOW;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

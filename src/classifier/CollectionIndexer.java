@@ -1,5 +1,7 @@
 package classifier;
 
+import extra.WebDocIterator;
+import extra.TrecDocIterator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;

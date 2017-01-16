@@ -4,8 +4,9 @@
  * Tested for TREC Disk 1-5.
  */
 
-package classifier;
+package extra;
 
+import classifier.CommandLineIndexing;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
