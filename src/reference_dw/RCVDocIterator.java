@@ -2,7 +2,7 @@
  * Index RCV1 document collections
  */
 
-package classifier;
+package reference_dw;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -258,13 +258,13 @@ public class RCVDocIterator implements Iterator<Document> {
                     txt = temp.toString();
                     // --- For replacing characters- ':','_'
                     */
-                    sb.replace(ReutersTags.RCV_PARA_BEGIN, "");
-                    sb.replace(ReutersTags.RCV_PARA_END, "");
                     String txt = sb.toString();
-
+                    txt = txt.replace(ReutersTags.RCV_PARA_BEGIN, "");
+                    txt = txt.replace(ReutersTags.RCV_PARA_END, "");
+                    
                     StringBuffer tokenizedContentBuff = new StringBuffer();
 
-                    TokenStream stream = analyzer.tokenStream(FIELD_BOW, 
+                    TokenStream stream = analyzer.tokenStream(ReutersFields.BODY, 
                         new StringReader(txt));
                     CharTermAttribute termAtt = stream.addAttribute(CharTermAttribute.class);
                     stream.reset();
@@ -284,7 +284,7 @@ public class RCVDocIterator implements Iterator<Document> {
                     fldTyp.setStored(true);
                     fldTyp.setTokenized(true);
                     fldTyp.setStoreTermVectors(true);
-                    doc.add(new Field(FIELD_BOW, toIndex, fldTyp));
+                    doc.add(new Field(ReutersFields.BODY, toIndex, fldTyp));
 
                     if(null != dumpPath) {
                         FileWriter fw = new FileWriter(dumpPath, true);
@@ -302,11 +302,12 @@ public class RCVDocIterator implements Iterator<Document> {
         /**
          * This is only used for dumping the content of the files; NO INDEXING
          * @return 
-         */
+         
 	public Document dumpNextDoc() {
             Document doc = new Document();
             StringBuffer sb = new StringBuffer();
 
+            /*
             // +++ For replacing characters- ':','_'
             Map<String, String> replacements = new HashMap<String, String>() {{
                 put(":", " ");
@@ -316,6 +317,7 @@ public class RCVDocIterator implements Iterator<Document> {
             String regExp = ":|_";
             Pattern p = Pattern.compile(regExp);
             // --- For replacing characters- ':','_'
+            
 
             try {
                 String line;
@@ -380,7 +382,7 @@ public class RCVDocIterator implements Iterator<Document> {
 
                     StringBuffer tokenizedContentBuff = new StringBuffer();
 
-                    TokenStream stream = analyzer.tokenStream(FIELD_BOW, new StringReader(txt));
+                    TokenStream stream = analyzer.tokenStream(ReutersFields.BODY, new StringReader(txt));
                     CharTermAttribute termAtt = stream.addAttribute(CharTermAttribute.class);
                     stream.reset();
 
@@ -402,7 +404,7 @@ public class RCVDocIterator implements Iterator<Document> {
             }
             return doc;
 	}
-
+*/
         @Override
 	public void remove() {
 	}

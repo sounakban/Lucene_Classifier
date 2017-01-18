@@ -2,7 +2,7 @@
  * TODO: queryField[] is not used. 
  * It works on only the title of the query.
  */
-package classifier;
+package reference_dw;
 
 import common.TRECQuery;
 import common.TRECQueryParser;

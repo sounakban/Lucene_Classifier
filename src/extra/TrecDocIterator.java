@@ -6,7 +6,7 @@
 
 package extra;
 
-import classifier.CommandLineIndexing;
+import reference_dw.CommandLineIndexing;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;

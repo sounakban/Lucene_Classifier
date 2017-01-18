@@ -2,7 +2,7 @@
  * Runs on the basis of command-line argument<p>
  * Uses the TrecDocIterator<p>
  */
-package classifier;
+package reference_dw;
 
 import extra.TrecDocIterator;
 import java.io.BufferedReader;

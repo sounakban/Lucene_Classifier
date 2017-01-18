@@ -7,7 +7,7 @@
 
 package extra;
 
-import classifier.CommandLineIndexing;
+import reference_dw.CommandLineIndexing;
 import static common.CommonVariables.FIELD_BOW;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

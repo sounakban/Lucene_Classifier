@@ -1,4 +1,4 @@
-package classifier;
+package reference_dw;
 
 import extra.WebDocIterator;
 import extra.TrecDocIterator;
