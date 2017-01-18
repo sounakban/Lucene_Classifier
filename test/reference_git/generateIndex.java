@@ -36,6 +36,69 @@ import java.util.regex.Pattern;
  * @author sounak
  */
 public class generateIndex {
+    
+    public static org.jdom2.Document ParseInputFile(File f) throws Exception{
+        System.out.println("Parsing File : "  + f.getAbsolutePath());
+        StringBuilder sb = new StringBuilder();
+        sb.append("<docs>");
+        List<String> fileLines = new ArrayList<String>();
+        String input = FileUtils.readFileToString(f);
+        String pattern = "&(?!amp;)";
+        Pattern p = Pattern.compile(pattern);
+        Matcher m = p.matcher(input);
+        input = input.replaceAll(pattern, "&amp;");
+        sb.append(input);
+        sb.append("</docs>");
+        String xml = sb.toString();
+        SAXBuilder xb = new SAXBuilder();
+        org.jdom2.Document doc ;
+        doc = xb.build(new StringReader(xml));
+        return doc;
+
+    }
+    
+    
+    public static void GetSummary(String indexPath) throws Exception{
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get((indexPath))));
+        //Print the total number of documents in the corpus
+        System.out.println("Total number of documents in the corpus: "+reader.maxDoc());
+
+        System.out.println("Number of documents containing the term \"new\" for field \"TEXT\": "+reader.docFreq(new Term("TEXT", "new")));
+
+        //Print the total number of occurrences of the term "new" across all documents for <field>TEXT</field>.
+        System.out.println("Number of occurrences of \"new\" in the field\"TEXT\": "+reader.totalTermFreq(new Term("TEXT","new")));
+
+        Terms vocabulary = MultiFields.getTerms(reader, "TEXT");
+
+        //Print the size of the vocabulary for <field>TEXT</field>, applicable when the index has only one segment.
+        System.out.println("Size of the vocabulary for this field:  "+vocabulary.size());
+        //Print the total number of documents that have at least one term for <field>TEXT</field>
+                System.out.println("Number of documents that have at least one term for  this field: "+vocabulary.getDocCount());
+
+
+        //Print the total number of tokens for <field>TEXT</field>
+        System.out.println("Number of tokens for this field "+vocabulary.getSumTotalTermFreq());
+
+        //Print the total number of postings for <field>TEXT</field>
+        System.out.println("Number of postings for this field: "+vocabulary.getSumDocFreq());
+
+        //Print the vocabulary for <field>TEXT</field>
+        TermsEnum iterator = vocabulary.iterator();
+        BytesRef byteRef = null;
+        System.out.println("\n*******Vocabulary-End**********");
+        reader.close();
+    }
+    public static String GetChildNodeContent ( Element e, String tag){
+        //Read each doc xml element and get it's child contents ;
+        String returnString = "";
+        for ( Element child : e.getChildren(tag)){
+            returnString = returnString  +  " " + child.getTextNormalize();
+        }
+        return returnString;
+    }
+    
+    
+    
     public static void main(String[] args){
         try{
             //Create a new lucene index;
@@ -101,63 +164,6 @@ public class generateIndex {
             e.printStackTrace();
         }
 
-
-    }
-    public static void GetSummary(String indexPath) throws Exception{
-        IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get((indexPath))));
-        //Print the total number of documents in the corpus
-        System.out.println("Total number of documents in the corpus: "+reader.maxDoc());
-
-        System.out.println("Number of documents containing the term \"new\" for field \"TEXT\": "+reader.docFreq(new Term("TEXT", "new")));
-
-        //Print the total number of occurrences of the term "new" across all documents for <field>TEXT</field>.
-        System.out.println("Number of occurrences of \"new\" in the field\"TEXT\": "+reader.totalTermFreq(new Term("TEXT","new")));
-
-        Terms vocabulary = MultiFields.getTerms(reader, "TEXT");
-
-        //Print the size of the vocabulary for <field>TEXT</field>, applicable when the index has only one segment.
-        System.out.println("Size of the vocabulary for this field:  "+vocabulary.size());
-        //Print the total number of documents that have at least one term for <field>TEXT</field>
-                System.out.println("Number of documents that have at least one term for  this field: "+vocabulary.getDocCount());
-
-
-        //Print the total number of tokens for <field>TEXT</field>
-        System.out.println("Number of tokens for this field "+vocabulary.getSumTotalTermFreq());
-
-        //Print the total number of postings for <field>TEXT</field>
-        System.out.println("Number of postings for this field: "+vocabulary.getSumDocFreq());
-
-        //Print the vocabulary for <field>TEXT</field>
-        TermsEnum iterator = vocabulary.iterator();
-        BytesRef byteRef = null;
-        System.out.println("\n*******Vocabulary-End**********");
-        reader.close();
-    }
-    public static String GetChildNodeContent ( Element e, String tag){
-        //Read each doc xml element and get it's child contents ;
-        String returnString = "";
-        for ( Element child : e.getChildren(tag)){
-            returnString = returnString  +  " " + child.getTextNormalize();
-        }
-        return returnString;
-    }
-    public static org.jdom2.Document ParseInputFile(File f) throws Exception{
-        System.out.println("Parsing File : "  + f.getAbsolutePath());
-        StringBuilder sb = new StringBuilder();
-        sb.append("<docs>");
-        List<String> fileLines = new ArrayList<String>();
-        String input = FileUtils.readFileToString(f);
-        String pattern = "&(?!amp;)";
-        Pattern p = Pattern.compile(pattern);
-        Matcher m = p.matcher(input);
-        input = input.replaceAll(pattern, "&amp;");
-        sb.append(input);
-        sb.append("</docs>");
-        String xml = sb.toString();
-        SAXBuilder xb = new SAXBuilder();
-        org.jdom2.Document doc ;
-        doc = xb.build(new StringReader(xml));
-        return doc;
 
     }
 

@@ -2,7 +2,7 @@
  * Index RCV1 document collections
  */
 
-package reference_dw;
+package classifier;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -28,6 +28,7 @@ import org.apache.lucene.document.StringField;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.lucene.document.FieldType;
+import reference_dw.CommandLineIndexing;
 /*import org.apache.lucene.document.TextField;*/
 
 
