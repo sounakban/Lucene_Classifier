@@ -66,7 +66,8 @@ public class test {
                          Element Code = CodeList.get(j);
                          Attribute codeAttribute =  Code.getAttribute("code");
                          allCodes = allCodes + codeAttribute.getValue();
-                         allCodes = allCodes + ",";
+                            if (j != CodeList.size()-1)
+                                allCodes = allCodes + ",";
                      }
                      System.out.println(": " + allCodes);
                  }
@@ -76,7 +77,8 @@ public class test {
                          Element Code = CodeList.get(j);
                          Attribute codeAttribute =  Code.getAttribute("code");
                          allCodes = allCodes + codeAttribute.getValue();
-                         allCodes = allCodes + ",";
+                            if (j != CodeList.size()-1)
+                                allCodes = allCodes + ",";
                      }
                      System.out.println(": " + allCodes);
                  }
@@ -86,7 +88,8 @@ public class test {
                          Element Code = CodeList.get(j);
                          Attribute codeAttribute =  Code.getAttribute("code");
                          allCodes = allCodes + codeAttribute.getValue();
-                         allCodes = allCodes + ",";
+                            if (j != CodeList.size()-1)
+                                allCodes = allCodes + ",";
                      }
                      System.out.println(": " + allCodes);
                  }
