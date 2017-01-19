@@ -5,15 +5,24 @@
  */
 package classifier;
 
+
+//Read XML Files
 import java.io.File;
-import java.nio.charset.MalformedInputException;
+import java.io.IOException;
+import java.util.List;
+import org.jdom2.Attribute;
+//import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
+import org.apache.lucene.document.Document;
+
+
+
+//For Indexing
 import java.nio.file.Paths;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
@@ -24,7 +33,83 @@ import org.apache.lucene.store.FSDirectory;
  * @author sounak
  */
 public class Indexer {
-    public static void main(String[] args){
+    
+    //Read Reuters files and return the document data
+    void readXML(String path) {
+        try {
+            File inputFile = new File(path);
+            SAXBuilder saxBuilder = new SAXBuilder();
+            org.jdom2.Document document = saxBuilder.build(inputFile);
+            //System.out.println("Root element :" + document.getRootElement().getName());
+            
+            Element rootElement = document.getRootElement();
+            Attribute IDattribute =  rootElement.getAttribute("itemid");
+            
+            //System.out.println("DocID : " + IDattribute.getValue() );
+            String docID = IDattribute.getValue();
+            //System.out.println("Title : " + rootElement.getChild("title").getText());
+            String title = rootElement.getChild("title").getText();
+            //System.out.println("Headline : "+ rootElement.getChild("headline").getText());
+            String headline = rootElement.getChild("headline").getText();
+            
+            List<Element> docText = rootElement.getChild("text").getChildren();
+            //System.out.println("Text : \n");
+            String text = "";
+            for (int temp = 0; temp < docText.size(); temp++) {
+                Element Paragraph = docText.get(temp);
+                //System.out.println(Paragraph.getText());
+                text = text + Paragraph.getText().trim();
+            }
+            
+            List<Element> MetaList = rootElement.getChild("metadata").getChildren();
+            for (int i = 0; i < MetaList.size(); i++) {
+                Element Meta = MetaList.get(i);
+                if ("codes".equals(Meta.getName())) {
+                    Attribute MetaAttribute =  Meta.getAttribute("class");
+                    String allCodes = "";
+                    if(MetaAttribute.getValue().contains("topics")) {
+                        List<Element> CodeList = Meta.getChildren();
+                        for (int j = 0; j < CodeList.size(); j++) {
+                            Element Code = CodeList.get(j);
+                            Attribute codeAttribute =  Code.getAttribute("code");
+                            allCodes = allCodes + codeAttribute.getValue();
+                            if (j != CodeList.size()-1)
+                                allCodes = allCodes + ",";
+                        }
+                        //System.out.println(": " + allCodes);
+                    }
+                    else if(MetaAttribute.getValue().contains("countries")) {
+                        List<Element> CodeList = Meta.getChildren();
+                        for (int j = 0; j < CodeList.size(); j++) {
+                            Element Code = CodeList.get(j);
+                            Attribute codeAttribute =  Code.getAttribute("code");
+                            allCodes = allCodes + codeAttribute.getValue();
+                            if (j != CodeList.size()-1)
+                                allCodes = allCodes + ",";
+                        }
+                        //System.out.println(": " + allCodes);
+                    }
+                    else if(MetaAttribute.getValue().contains("industries")) {
+                        List<Element> CodeList = Meta.getChildren();
+                        for (int j = 0; j < CodeList.size(); j++) {
+                            Element Code = CodeList.get(j);
+                            Attribute codeAttribute =  Code.getAttribute("code");
+                            allCodes = allCodes + codeAttribute.getValue();
+                            if (j != CodeList.size()-1)
+                                allCodes = allCodes + ",";
+                        }
+                        //System.out.println(": " + allCodes);
+                    }
+                }
+            }
+        }catch(JDOMException e){
+            e.printStackTrace();
+        }catch(IOException ioe){
+            ioe.printStackTrace();
+        }
+    }
+    
+    void CreateIndex() {
         try{
             //Create a new lucene index;
             String indexDirectoryName = "indexDir";
@@ -42,45 +127,7 @@ public class Indexer {
             File folder = new File(corpusFolder);
             File[] listOfFiles = folder.listFiles();
             for ( int j =0 ;  j < listOfFiles.length ; j++) {
-                File f = listOfFiles[j];
-                try {
-
-                    if (f.getAbsolutePath().contains(".trectext") == false) {
-                        System.out.println("trectext file");
-                        continue;
-                    }
-                    org.jdom2.Document xmlDoc = ParseInputFile(f);
-                    //A signle xml document will contain multiple documents
-                    //Read each single document and parse the contents to build the index/
-                    org.jdom2.Element rootDocs = xmlDoc.getRootElement();
-                    for (Element doc : rootDocs.getChildren("DOC")) {
-                        //Get the attributes for each element and create an index
-                        Document luceneDoc = new Document();
-                        String docNo = GetChildNodeContent(doc, "DOCNO");
-                        String head = GetChildNodeContent(doc, "HEAD");
-
-                        String byline = GetChildNodeContent(doc, "BYLINE");
-
-
-                        String dateline = GetChildNodeContent(doc, "DATELINE");
-                        String text = GetChildNodeContent(doc, "TEXT");
-
-
-                        luceneDoc.add(new StringField("DOCNO", docNo, Field.Store.YES));
-                        luceneDoc.add(new StringField("HEAD", head, Field.Store.YES));
-                        luceneDoc.add(new StringField("BYLINE", byline, Field.Store.YES));
-                        luceneDoc.add(new StringField("DATELINE", dateline, Field.Store.YES));
-                        luceneDoc.add(new TextField("TEXT", text ,Field.Store.YES));
-
-
-                        writer.addDocument(luceneDoc);
-                    }
-
-                }
-                catch(MalformedInputException me){
-                    System.out.println("Unable to read file " + f.getAbsolutePath() + ". Improper Encoding. ");
-                    continue;
-                }
+                
             }
             writer.close();
             //Print Index Summaries.

@@ -13,7 +13,6 @@ import static common.CommonVariables.FIELD_ID;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
