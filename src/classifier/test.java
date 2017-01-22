@@ -19,6 +19,11 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+
+//Read Text
+import java.io.FileReader;
+import java.io.BufferedReader;
+
 /**
  *
  * @author sounakbanerjee
@@ -105,6 +110,27 @@ public class test {
     }
     
     
+    static void readText(String path) {
+        try {
+            File inputFile = new File(path);
+            FileReader inputFileReader = new FileReader(inputFile);
+            BufferedReader read = new BufferedReader(inputFileReader);
+            
+            String line = "";
+            while (line.equals(""))    line = read.readLine();
+            System.out.println("Headline : " + line.replaceAll("\\<.*?\\> ", "").trim());
+            
+            StringBuffer text = new StringBuffer();
+            while ((line = read.readLine()) != null) {
+                text.append(line.trim() + " ");
+            }
+            System.out.println("Text : " + text);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
     public static void main(String[] args) {
         
         // ###########Find variable types and content#########
@@ -122,6 +148,10 @@ public class test {
         
         
         //Read XML Files
-        readXML("/home/sounak/work/2286newsML.xml");
+        readXML("/Users/sounakbanerjee/Desktop/Temp/untitled folder/780713newsML.xml");
+        
+        
+        //Read Simple text
+        readText("/Volumes/Files/Current/Problems/4) ISI/Practical/Datasets/Reuters21578-Apte-top10/training/acq/0000005");
     }
 }
