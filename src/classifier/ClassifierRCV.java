@@ -23,6 +23,7 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.classification.document.KNearestNeighborDocumentClassifier;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.classification.ClassificationResult;
 //import org.apache.lucene.analysis.en.PorterStemFilter;
 
 public class ClassifierRCV {

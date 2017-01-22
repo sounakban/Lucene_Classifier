@@ -61,7 +61,7 @@ public class IndexerR21578 {
 
             StringBuffer temp = new StringBuffer();
             while ((line = read.readLine()) != null) {
-                temp.append(line.trim() + " ");
+                temp.append(line.trim()).append(" ");
             }
             //System.out.println("Text : \n");
             String text = temp.toString();
