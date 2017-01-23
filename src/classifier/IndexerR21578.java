@@ -68,6 +68,7 @@ public class IndexerR21578 {
             luceneDoc.add(new TextField("Text", text, Field.Store.YES));
 
             luceneDoc.add(new StringField("Topics", docClass, Field.Store.YES));
+            //System.out.println("Doc Class : " + docClass);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -102,6 +103,7 @@ public class IndexerR21578 {
                             continue;
                         }
                         Document luceneDoc = readR21578(file.getAbsolutePath(), classFolder.getName());
+                        
                         writer.addDocument(luceneDoc);
                     } catch (IOException e) {
                         e.printStackTrace();

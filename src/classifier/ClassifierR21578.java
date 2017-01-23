@@ -9,6 +9,7 @@ package classifier;
  *
  * @author sounakbanerjee
  */
+//For Classification
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -34,40 +35,22 @@ import org.apache.lucene.classification.ClassificationResult;
 import org.apache.lucene.util.BytesRef;
 //import org.apache.lucene.analysis.en.PorterStemFilter;
 
+
+//For Evaluation
+import org.deeplearning4j.eval.ConfusionMatrix;
+
+
 public class ClassifierR21578 {
 
-    public void Classify(String indexLoc) {
+    ClassificationResult<BytesRef> classifyDoc(KNearestNeighborDocumentClassifier knn, String path) {
 
+        ClassificationResult<BytesRef> res=null;
         try {
-            StandardAnalyzer analyzer1 = new StandardAnalyzer();
-            FSDirectory index = FSDirectory.open(Paths.get(indexLoc));
-            IndexReader reader = DirectoryReader.open(index);
-
-            //Segmented reader
-            List<LeafReaderContext> leaves = reader.leaves();
-            BM25Similarity BM25 = new BM25Similarity();
-            Map<String, Analyzer> field2analyzer = new HashMap<>();
-            field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer());
-            /*For Multiple Leaves (Segment in Index)
-            System.out.println("Num of leaves: " + leaves.size());
-            for (LeafReaderContext leaf : leaves) {
-                LeafReader atomicReader = leaf.reader();
-                KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
-                        BM25, null, 10, 0, 0, "Topics", field2analyzer, "text");
-            }
-            */
-            
-            //For single Leaf (Segment in Index)
-            LeafReaderContext leaf = leaves.get(0);
-            LeafReader atomicReader = leaf.reader();
-            KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
-                        BM25, null, 10, 0, 0, "Topics", field2analyzer, "Text");
-            
             
             //###Read current Doc###
-            String path = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/test/crude/0009605";
+            path = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/test/crude/0009605";
             Document luceneDoc = new Document();
-             File inputFile = new File(path);
+            File inputFile = new File(path);
             FileReader inputFileReader = new FileReader(inputFile);
             BufferedReader read = new BufferedReader(inputFileReader);
 
@@ -94,9 +77,66 @@ public class ClassifierR21578 {
             //luceneDoc.add(new StringField("Topics", docClass, Field.Store.YES));
             //###Read current Doc###
 
-            ClassificationResult<BytesRef> res = knn.assignClass(luceneDoc);
-            BytesRef resstr = res.getAssignedClass();
-            System.out.println("Assigned Class : " + resstr.utf8ToString());
+            res = knn.assignClass(luceneDoc);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return res;
+    }
+    
+    
+    void performClassification(String indexLoc, String testData) {
+        try {
+            
+            //#######Read Index and Train#########
+            FSDirectory index = FSDirectory.open(Paths.get(indexLoc));
+            IndexReader reader = DirectoryReader.open(index);
+
+            //Segmented reader
+            List<LeafReaderContext> leaves = reader.leaves();
+            BM25Similarity BM25 = new BM25Similarity();
+            Map<String, Analyzer> field2analyzer = new HashMap<>();
+            field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer());
+            
+            /*For Multiple Leaves (Segment in Index)
+            System.out.println("Num of leaves: " + leaves.size());
+            for (LeafReaderContext leaf : leaves) {
+                LeafReader atomicReader = leaf.reader();
+                KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
+                        BM25, null, 10, 0, 0, "Topics", field2analyzer, "text");
+            }
+             */
+
+            //For single Leaf (Segment in Index)
+            LeafReaderContext leaf = leaves.get(0);
+            LeafReader atomicReader = leaf.reader();
+            KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
+                    BM25, null, 10, 0, 0, "Topics", field2analyzer, "Text");
+            //#######Read Index and Train#########
+            
+            
+            //########Iterate and Classify Test Docs##########
+            testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
+            File trainingFolder = new File(testData);
+            File[] listOfFolders = trainingFolder.listFiles();
+            for (File folder : listOfFolders) {
+                File classFolder = new File(folder.getAbsolutePath());
+                File[] listOfFiles = classFolder.listFiles();
+                for (File file : listOfFiles) {
+                    if (file.getName().contains("\\.")) {
+                        System.out.println("Unknown File: " + file.getAbsolutePath());
+                        continue;
+                    }
+                    ClassificationResult<BytesRef> res = classifyDoc(knn, file.getAbsolutePath());
+                    BytesRef resClass = res.getAssignedClass();
+                    String originalClass = classFolder.getName();
+                    String predClass = resClass.utf8ToString();
+                    System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
+                }
+            }
+            //########Iterate and Classify Test Docs##########
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -105,6 +145,6 @@ public class ClassifierR21578 {
 
     public static void main(String[] args) {
         ClassifierR21578 cl = new ClassifierR21578();
-        cl.Classify("/Users/sounakbanerjee/Desktop/Temp/index");
+        cl.performClassification("/Users/sounakbanerjee/Desktop/Temp/index", "");
     }
 }
