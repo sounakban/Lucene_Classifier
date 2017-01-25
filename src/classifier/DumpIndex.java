@@ -1,6 +1,16 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
 package classifier;
 
-import java.io.File;
+/**
+ *
+ * @author sounakbanerjee
+ */
+
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
@@ -13,21 +23,13 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.lucene.document.Document;
-//import org.apache.lucene.document.Field;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.index.IndexableField;
 
-/**
- * Dumps a Lucene index as XML. Dumps all documents with their fields and
- * values to stdout.
- * 
- * Blog post at http://ktulu.com.ar/blog/2009/10/12/dumping-lucene-indexes-as-xml/
- * 
- * @author Luis Parravicini
- */
+
 public class DumpIndex {
 
     /**
@@ -48,13 +50,15 @@ public class DumpIndex {
     public void dump() throws XMLStreamException, FactoryConfigurationError,
             CorruptIndexException, IOException {
         XMLStreamWriter out = XMLOutputFactory.newInstance()
-                .createXMLStreamWriter(new FileWriter("/Users/sounakbanerjee/Desktop/Temp/XLMDump/dump.xml"));
+                .createXMLStreamWriter(new FileWriter("/Users/sounakbanerjee/Desktop/Temp/XMLDump/dump.xml"));
 
         FSDirectory index = FSDirectory.open(Paths.get("/Users/sounakbanerjee/Desktop/Temp/index"));
         IndexReader reader = DirectoryReader.open(index);
         //out.writeStartDocument();
         out.writeStartDocument("utf-8", "1.0");
+        out.writeCharacters("\n");
         out.writeStartElement("documents");
+        out.writeCharacters("\n");
         for (int i = 0; i < reader.numDocs(); i++)
             dumpDocument(reader.document(i), out);
         out.writeEndElement();
@@ -69,11 +73,14 @@ public class DumpIndex {
             throws XMLStreamException {
         out.writeStartElement("document");
         for (IndexableField field : (List<IndexableField>) document.getFields()) {
+            out.writeCharacters("\n");
             out.writeStartElement("field");
             out.writeAttribute("name", field.name());
             out.writeAttribute("value", field.stringValue());
             out.writeEndElement();
         }
+        out.writeCharacters("\n");
         out.writeEndElement();
+        out.writeCharacters("\n");
     }
 }

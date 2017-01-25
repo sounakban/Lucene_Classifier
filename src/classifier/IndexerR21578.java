@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.List;
 import org.apache.lucene.document.Document;
 
 //For Indexing
@@ -24,16 +23,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import java.nio.charset.MalformedInputException;
-
-//For Dumping
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.MultiFields;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.Terms;
-import org.apache.lucene.index.TermsEnum;
-import org.apache.lucene.util.BytesRef;
 
 /**
  *
@@ -63,8 +52,8 @@ public class IndexerR21578 {
             while ((line = read.readLine()) != null) {
                 temp.append(line.trim()).append(" ");
             }
-            //System.out.println("Text : \n");
             String text = temp.toString();
+            //System.out.println("Text : \n");
             luceneDoc.add(new TextField("Text", text, Field.Store.YES));
 
             luceneDoc.add(new StringField("Topics", docClass, Field.Store.YES));
@@ -89,6 +78,7 @@ public class IndexerR21578 {
             IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
             iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
             IndexWriter writer = new IndexWriter(dir, iwc);
+            
             //Read XML Files
             String corpusFolder = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
             File trainingFolder = new File(corpusFolder);
@@ -115,38 +105,6 @@ public class IndexerR21578 {
             e.printStackTrace();
         }
     }
-    
-/*
-    void DumpIndex(String indexPath) throws Exception {
-        IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get((indexPath))));
-        //Print the total number of documents in the corpus
-        System.out.println("Total number of documents in the corpus: " + reader.maxDoc());
-
-        System.out.println("Number of documents containing the term \"new\" for field \"TEXT\": " + reader.docFreq(new Term("TEXT", "new")));
-
-        //Print the total number of occurrences of the term "new" across all documents for <field>TEXT</field>.
-        System.out.println("Number of occurrences of \"new\" in the field\"TEXT\": " + reader.totalTermFreq(new Term("TEXT", "new")));
-
-        Terms vocabulary = MultiFields.getTerms(reader, "TEXT");
-
-        //Print the size of the vocabulary for <field>TEXT</field>, applicable when the index has only one segment.
-        System.out.println("Size of the vocabulary for this field:  " + vocabulary.size());
-        //Print the total number of documents that have at least one term for <field>TEXT</field>
-        System.out.println("Number of documents that have at least one term for  this field: " + vocabulary.getDocCount());
-
-        //Print the total number of tokens for <field>TEXT</field>
-        System.out.println("Number of tokens for this field " + vocabulary.getSumTotalTermFreq());
-
-        //Print the total number of postings for <field>TEXT</field>
-        System.out.println("Number of postings for this field: " + vocabulary.getSumDocFreq());
-
-        //Print the vocabulary for <field>TEXT</field>
-        TermsEnum iterator = vocabulary.iterator();
-        BytesRef byteRef = null;
-        System.out.println("\n*******Vocabulary-End**********");
-        reader.close();
-    }
-*/
     
     public static void main(String[] args) {
         IndexerR21578 ind = new IndexerR21578();

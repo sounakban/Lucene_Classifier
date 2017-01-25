@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.DirectoryReader;
@@ -33,7 +32,6 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.classification.ClassificationResult;
 import org.apache.lucene.util.BytesRef;
-//import org.apache.lucene.analysis.en.PorterStemFilter;
 
 
 //For Evaluation
@@ -48,7 +46,6 @@ public class ClassifierR21578 {
         try {
             
             //###Read current Doc###
-            path = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/test/crude/0009605";
             Document luceneDoc = new Document();
             File inputFile = new File(path);
             FileReader inputFileReader = new FileReader(inputFile);
@@ -70,11 +67,10 @@ public class ClassifierR21578 {
             while ((line = read.readLine()) != null) {
                 temp.append(line.trim()).append(" ");
             }
-            //System.out.println("Text : \n");
             String text = temp.toString();
+            //System.out.println("Text : \n" + text);
             luceneDoc.add(new TextField("Text", text, Field.Store.YES));
 
-            //luceneDoc.add(new StringField("Topics", docClass, Field.Store.YES));
             //###Read current Doc###
 
             res = knn.assignClass(luceneDoc);
@@ -96,12 +92,12 @@ public class ClassifierR21578 {
 
             //Segmented reader
             List<LeafReaderContext> leaves = reader.leaves();
+            System.out.println("Number of leaves: " + leaves.size());
             BM25Similarity BM25 = new BM25Similarity();
             Map<String, Analyzer> field2analyzer = new HashMap<>();
             field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer());
             
             /*For Multiple Leaves (Segment in Index)
-            System.out.println("Num of leaves: " + leaves.size());
             for (LeafReaderContext leaf : leaves) {
                 LeafReader atomicReader = leaf.reader();
                 KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,

@@ -2,7 +2,7 @@
  * Index RCV1 document collections
  */
 
-package classifier;
+package Others;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
