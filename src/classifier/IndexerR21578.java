@@ -68,7 +68,8 @@ public class IndexerR21578 {
     void CreateIndex() {
         try {
             //Create a new lucene index;
-            String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index";
+            //String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index";
+            String indexDirectoryName = "/home/sounak/work/Datasets/index/reuters21578";
             File indexDirectory = new File(indexDirectoryName);
             if (!indexDirectory.exists()) {
                 indexDirectory.mkdir();
@@ -80,11 +81,12 @@ public class IndexerR21578 {
             IndexWriter writer = new IndexWriter(dir, iwc);
             
             //Read XML Files
-            String corpusFolder = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
+            //String corpusFolder = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
+            String corpusFolder = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/training";
             File trainingFolder = new File(corpusFolder);
             File[] listOfFolders = trainingFolder.listFiles();
-            for (File folder : listOfFolders) {
-                File classFolder = new File(folder.getAbsolutePath());
+            for (File classFolder : listOfFolders) {
+                //File classFolder = new File(folder.getAbsolutePath());
                 File[] listOfFiles = classFolder.listFiles();
                 for (File file : listOfFiles) {
                     try {

@@ -35,7 +35,11 @@ import org.apache.lucene.util.BytesRef;
 
 
 //For Evaluation
-import org.deeplearning4j.eval.ConfusionMatrix;
+import java.io.File;
+import java.util.List;
+import java.util.ArrayList;
+//import org.deeplearning4j.eval.ConfusionMatrix;
+import com.aliasi.classify.ConfusionMatrix;
 
 
 public class ClassifierR21578 {
@@ -113,10 +117,26 @@ public class ClassifierR21578 {
             //#######Read Index and Train#########
             
             
+            //###########Create Confusion Matrix##########
+            //Get Class List
+            List<String> classList = new ArrayList();
+            String corpusTraining = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/training";
+            File trainingFolder = new File(corpusTraining);
+            File[] trainClassList = trainingFolder.listFiles();
+            for (File trainClass : trainClassList)
+                classList.add(trainClass.getName());
+            String[] allClass = classList.toArray(new String[classList.size()]);
+            //Create Confusion-Matrix
+            //ConfusionMatrix cMatrix = new ConfusionMatrix(classList);
+            ConfusionMatrix cMatrix = new ConfusionMatrix(allClass);
+            //###########Create Confusion Matrix##########
+            
+            
             //########Iterate and Classify Test Docs##########
-            testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
-            File trainingFolder = new File(testData);
-            File[] listOfFolders = trainingFolder.listFiles();
+            //testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
+            testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";
+            File testFolder = new File(testData);
+            File[] listOfFolders = testFolder.listFiles();
             for (File folder : listOfFolders) {
                 File classFolder = new File(folder.getAbsolutePath());
                 File[] listOfFiles = classFolder.listFiles();
@@ -129,9 +149,11 @@ public class ClassifierR21578 {
                     BytesRef resClass = res.getAssignedClass();
                     String originalClass = classFolder.getName();
                     String predClass = resClass.utf8ToString();
-                    System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
+                    //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
+                    cMatrix.increment(originalClass, predClass);
                 }
             }
+            System.out.println("F-Measure: " + cMatrix.macroAvgFMeasure());
             //########Iterate and Classify Test Docs##########
 
         } catch (IOException e) {
@@ -141,6 +163,7 @@ public class ClassifierR21578 {
 
     public static void main(String[] args) {
         ClassifierR21578 cl = new ClassifierR21578();
-        cl.performClassification("/Users/sounakbanerjee/Desktop/Temp/index", "");
+        //cl.performClassification("/Users/sounakbanerjee/Desktop/Temp/index", "");
+        cl.performClassification("/home/sounak/work/Datasets/index/reuters21578", "");
     }
 }
