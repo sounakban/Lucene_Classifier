@@ -10,19 +10,18 @@ package classifier;
  * @author sounakbanerjee
  */
 //For Classification
+import resources.ConfusionMatrix;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.search.similarities.BM25Similarity;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.classification.document.KNearestNeighborDocumentClassifier;
@@ -37,9 +36,9 @@ import org.apache.lucene.util.BytesRef;
 //For Evaluation
 import java.io.File;
 import java.util.List;
-import java.util.ArrayList;
-//import org.deeplearning4j.eval.ConfusionMatrix;
-import com.aliasi.classify.ConfusionMatrix;
+import resources.StopWords_RanksNL;
+//import java.util.ArrayList;
+//import com.aliasi.classify.ConfusionMatrix; //LingpipeLibrary
 
 
 public class ClassifierR21578 {
@@ -99,7 +98,8 @@ public class ClassifierR21578 {
             System.out.println("Number of leaves: " + leaves.size());
             BM25Similarity BM25 = new BM25Similarity();
             Map<String, Analyzer> field2analyzer = new HashMap<>();
-            field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer());
+            field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer(StopWords_RanksNL.stopWords));
+            //field2analyzer.put("Text", new org.apache.lucene.analysis.en.EnglishAnalyzer());
             
             /*For Multiple Leaves (Segment in Index)
             for (LeafReaderContext leaf : leaves) {
@@ -116,8 +116,8 @@ public class ClassifierR21578 {
                     BM25, null, 10, 0, 0, "Topics", field2analyzer, "Text");
             //#######Read Index and Train#########
             
-            
-            //###########Create Confusion Matrix##########
+            /*
+            //###########Create Confusion Matrix With LingPipe##########
             //Get Class List
             List<String> classList = new ArrayList();
             String corpusTraining = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/training";
@@ -127,12 +127,12 @@ public class ClassifierR21578 {
                 classList.add(trainClass.getName());
             String[] allClass = classList.toArray(new String[classList.size()]);
             //Create Confusion-Matrix
-            //ConfusionMatrix cMatrix = new ConfusionMatrix(classList);
             ConfusionMatrix cMatrix = new ConfusionMatrix(allClass);
-            //###########Create Confusion Matrix##########
+            //###########Create Confusion Matrix With LingPipe##########*/
             
+            ConfusionMatrix cMatrix = new ConfusionMatrix();
             
-            //########Iterate and Classify Test Docs##########
+            //########Iterate through Test Docs : Classify & Report##########
             //testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
             testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";
             File testFolder = new File(testData);
@@ -150,11 +150,15 @@ public class ClassifierR21578 {
                     String originalClass = classFolder.getName();
                     String predClass = resClass.utf8ToString();
                     //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
-                    cMatrix.increment(originalClass, predClass);
+                    //cMatrix.increment(originalClass, predClass);
+                    cMatrix.increaseValue(originalClass, predClass);
                 }
             }
-            System.out.println("F-Measure: " + cMatrix.macroAvgFMeasure());
-            //########Iterate and Classify Test Docs##########
+            System.out.println("F-Measure: " + cMatrix.getMacroFMeasure());
+            System.out.println("Precision: " + cMatrix.getAvgPrecision());
+            System.out.println("Recall: " + cMatrix.getAvgRecall());
+            
+            //########Iterate through Test Docs : Classify & Report##########
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -5,9 +5,6 @@
  */
 package Others;
 
-//Variable types and content
-import static common.CommonVariables.FIELD_BOW;
-import static common.CommonVariables.FIELD_ID;
 
 //Read XML Files
 import java.io.File;
@@ -23,6 +20,7 @@ import org.jdom2.input.SAXBuilder;
 //Read Text
 import java.io.FileReader;
 import java.io.BufferedReader;
+
 
 /**
  *
@@ -134,9 +132,9 @@ public class test {
     public static void main(String[] args) {
         
         // ###########Find variable types and content#########
-        println("\n"+"###########Find variable types and content#########");
-        println("Field_ID : type : "+FIELD_ID.getClass().getName()+"     Content : "+FIELD_ID);
-        println("Field_BOW : type : "+FIELD_BOW.getClass().getName()+"     Content : "+FIELD_BOW);
+        //println("\n"+"###########Find variable types and content#########");
+        //println("Field_ID : type : "+FIELD_ID.getClass().getName()+"     Content : "+FIELD_ID);
+        //println("Field_BOW : type : "+FIELD_BOW.getClass().getName()+"     Content : "+FIELD_BOW);
         
         // ###########String Builder Experiments#########
         println("\n"+"###########String Builder Experiments#########");
@@ -153,5 +151,7 @@ public class test {
         
         //Read Simple text
         readText("/Volumes/Files/Current/Problems/4) ISI/Practical/Datasets/Reuters21578-Apte-top10/training/acq/0000005");
+       
+        
     }
 }
