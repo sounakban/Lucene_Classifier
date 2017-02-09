@@ -1,15 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-package classifier;
-
-/**
- *
- * @author sounakbanerjee
- */
+package CommonResources;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -28,6 +17,14 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.index.IndexableField;
+
+
+
+/**
+ *
+ * @author sounakbanerjee
+ */
+
 
 
 public class DumpIndex {

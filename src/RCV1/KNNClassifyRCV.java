@@ -1,14 +1,6 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package classifier;
+package RCV1;
 
-/**
- *
- * @author sounakbanerjee
- */
+
 import java.nio.file.Paths;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.store.FSDirectory;
@@ -26,7 +18,14 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.classification.ClassificationResult;
 //import org.apache.lucene.analysis.en.PorterStemFilter;
 
-public class ClassifierRCV {
+
+
+/**
+ *
+ * @author sounakbanerjee
+ */
+
+public class KNNClassifyRCV {
 
     public void Classify(String indexLoc) {
 
@@ -63,7 +62,7 @@ public class ClassifierRCV {
     }
 
     public static void main(String[] args) {
-        ClassifierRCV cl = new ClassifierRCV();
+        KNNClassifyRCV cl = new KNNClassifyRCV();
         cl.Classify("/Users/sounakbanerjee/Desktop/Temp/index");
     }
 }

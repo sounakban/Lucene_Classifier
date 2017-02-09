@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package resources;
+package CommonResources;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,9 +12,9 @@ import org.apache.lucene.analysis.CharArraySet;
 
 /**
  *
- * @author sounak
+ * @author sounakbanerjee
  */
-public class StopWords_RanksNL {
+public class RanksNL {
     
     private static final String[] RanksNLStpWrd = {"a", "about", "above", "after", "again", "against", "all", "am",
         "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been",
@@ -38,7 +38,7 @@ public class StopWords_RanksNL {
         "you've", "your", "yours", "yourself", "yourselves"};
     public static CharArraySet stopWords;
     
-    StopWords_RanksNL() {
+    RanksNL() {
         List<String> stopWordsList = new ArrayList(Arrays.asList(RanksNLStpWrd));
         stopWords = new CharArraySet(stopWordsList, true);
     }

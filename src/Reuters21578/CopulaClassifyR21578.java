@@ -1,16 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package classifier;
+package Reuters21578;
 
-/**
- *
- * @author sounakbanerjee
- */
+
 //For Classification
-import resources.ConfusionMatrix;
+import CommonResources.ConfusionMatrix;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -36,12 +28,25 @@ import org.apache.lucene.util.BytesRef;
 //For Evaluation
 import java.io.File;
 import java.util.List;
-import resources.StopWords_RanksNL;
-//import java.util.ArrayList;
-//import com.aliasi.classify.ConfusionMatrix; //LingpipeLibrary
+import CommonResources.RanksNL;
+
+/*
+//Get list of Training Classes
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.index.Fields;
+import org.apache.lucene.index.MultiFields;
+*/
 
 
-public class ClassifierR21578 {
+/**
+ *
+ * @author sounakbanerjee
+ */
+
+
+
+public class CopulaClassifyR21578 {
 
     ClassificationResult<BytesRef> classifyDoc(KNearestNeighborDocumentClassifier knn, String path) {
 
@@ -98,7 +103,7 @@ public class ClassifierR21578 {
             System.out.println("Number of leaves: " + leaves.size());
             BM25Similarity BM25 = new BM25Similarity();
             Map<String, Analyzer> field2analyzer = new HashMap<>();
-            field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer(StopWords_RanksNL.stopWords));
+            field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer(RanksNL.stopWords));
             //field2analyzer.put("Text", new org.apache.lucene.analysis.en.EnglishAnalyzer());
             
             /*For Multiple Leaves (Segment in Index)
@@ -116,19 +121,21 @@ public class ClassifierR21578 {
                     BM25, null, 10, 0, 0, "Topics", field2analyzer, "Text");
             //#######Read Index and Train#########
             
+            
             /*
-            //###########Create Confusion Matrix With LingPipe##########
-            //Get Class List
-            List<String> classList = new ArrayList();
-            String corpusTraining = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/training";
-            File trainingFolder = new File(corpusTraining);
-            File[] trainClassList = trainingFolder.listFiles();
-            for (File trainClass : trainClassList)
-                classList.add(trainClass.getName());
-            String[] allClass = classList.toArray(new String[classList.size()]);
-            //Create Confusion-Matrix
-            ConfusionMatrix cMatrix = new ConfusionMatrix(allClass);
-            //###########Create Confusion Matrix With LingPipe##########*/
+            //###########Get Class List of Training Docs##########
+            Terms classes = MultiFields.getTerms(reader, "Topics");
+            TermsEnum classesEnum = classes.iterator();
+            BytesRef next;
+            System.out.println("Classes : ");
+            while ((next = classesEnum.next()) != null) {
+                if (next.length > 0) {
+                    String term = next.utf8ToString();
+                    System.out.println(term + ",");
+                }
+            }
+            //###########Get Class List of Training Docs##########
+            */
             
             ConfusionMatrix cMatrix = new ConfusionMatrix();
             
@@ -166,7 +173,7 @@ public class ClassifierR21578 {
     }
 
     public static void main(String[] args) {
-        ClassifierR21578 cl = new ClassifierR21578();
+        CopulaClassifyR21578 cl = new CopulaClassifyR21578();
         //cl.performClassification("/Users/sounakbanerjee/Desktop/Temp/index", "");
         cl.performClassification("/home/sounak/work/Datasets/index/reuters21578", "");
     }
