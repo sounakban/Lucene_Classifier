@@ -43,7 +43,7 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
  *
- * @author sounak
+ * @author sounakbanerjee
  */
 
 
@@ -102,6 +102,32 @@ public class TermCooccurence implements Serializable {
     }
     
     
+    public Integer getClassUniquePairCount (String tpClass) {
+        if (tpClass == null || tpClass.equals("")) {
+            tpClass = "no_class";
+        }
+        HashMap<TermPair, Integer> classFreqList = this.CooccurenceList.get(tpClass);
+        if (classFreqList == null) 
+            return null;
+        return classFreqList.size();
+    }
+    
+    
+    public Integer getClassFreqSum (String tpClass) {
+        Integer sum = 0;
+        if (tpClass == null || tpClass.equals("")) {
+            tpClass = "no_class";
+        }
+        HashMap<TermPair, Integer> classFreqList = this.CooccurenceList.get(tpClass);
+        if (classFreqList == null) 
+            return null;
+        for (Integer value : classFreqList.values()) {
+            sum += value;
+        }
+        return sum;
+    }
+    
+    
     public Integer getCount(TermPair tp, String tpClass) {
         if (tpClass == null || tpClass.equals("")) {
             tpClass = "no_class";
@@ -139,7 +165,6 @@ public class TermCooccurence implements Serializable {
                             }
                         }
                     }
-                    //CooccurList.put(nextClass.toString(), classCooccurList);
                 }
                 if (breakingtest == 1)
                     break;
@@ -177,7 +202,6 @@ public class TermCooccurence implements Serializable {
                             }
                         }
                     }
-                    //CooccurList.put(nextClass.toString(), classCooccurList);
                 }
                 if (breakingtest == 1)
                     break;
@@ -206,11 +230,43 @@ public class TermCooccurence implements Serializable {
         }
     }
     
+    /**
+     * Generate all sentence level Cooccurence of all terms in a piece of text along with their frequencies.
+     * 
+     * @param text The text to be processed
+     * @param analyzer A Lucene analyzer object used to process the text.
+     * @param tpClass An option, if the user would like to assign a class to the document, if not leave it "".
+     * @return A TermCooccurence variable that contains list of all cooccurences
+     * @throws java.io.IOException
+     */
+    public static HashMap<TermPair, Integer> generateCooccurences (String text, Analyzer analyzer) throws IOException {
+        HashMap<TermPair, Integer> cooccurList = new HashMap();
+        BreakIterator sentences = BreakIterator.getSentenceInstance(Locale.US);
+        sentences.setText(text);
+        int start = sentences.first();
+        for (int end = sentences.next(); end != BreakIterator.DONE; start = end, end = sentences.next()) {
+            String sentence = text.substring(start,end);
+            List words = tokenizeString(analyzer, sentence);
+            for (int i = 0 ; i < words.size() ; i++) {
+                for (int j = i+1 ; j < words.size() ; j++) {
+                    TermPair tp = new TermPair(words.get(i).toString(), words.get(j).toString());
+                    Integer freq = cooccurList.get(tp);
+                    if (freq!=null)
+                        freq += 1;
+                    else
+                        freq = 1;
+                    cooccurList.put(tp, freq);;
+                }
+            }
+        }
+        return cooccurList;
+    }
+    
     
     private static List tokenizeString(Analyzer analyzer, String str) {
         List result = new ArrayList<>();
         try {
-            TokenStream stream  = analyzer.tokenStream(null, new StringReader(str));
+            TokenStream stream = analyzer.tokenStream(null, new StringReader(str));
             stream.reset();
             while (stream.incrementToken())
                 result.add(stream.getAttribute(CharTermAttribute.class).toString());
