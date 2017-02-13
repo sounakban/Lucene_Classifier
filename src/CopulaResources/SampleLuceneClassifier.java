@@ -41,7 +41,7 @@ import org.apache.lucene.util.BytesRef;
 
 
 
-public class GumbelCopulaClassifierAlpha implements Classifier<BytesRef>{
+public class SampleLuceneClassifier implements Classifier<BytesRef>{
     
     /**
      * {@link org.apache.lucene.index.IndexReader} used to access the {@link org.apache.lucene.classification.Classifier}'s
@@ -85,7 +85,7 @@ public class GumbelCopulaClassifierAlpha implements Classifier<BytesRef>{
      *                       as the returned class will be a token indexed for this field
      * @param textFieldNames the name of the fields used as the inputs for the classifier, NO boosting supported per field
      */
-    public GumbelCopulaClassifierAlpha(IndexReader indexReader, Analyzer analyzer, Query query, String classFieldName, String... textFieldNames) {
+    public SampleLuceneClassifier(IndexReader indexReader, Analyzer analyzer, Query query, String classFieldName, String... textFieldNames) {
         this.indexReader = indexReader;
         this.indexSearcher = new IndexSearcher(this.indexReader);
         this.textFieldNames = textFieldNames;
