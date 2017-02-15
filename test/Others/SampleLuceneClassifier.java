@@ -3,7 +3,7 @@
 * To change this template file, choose Tools | Templates
 * and open the template in the editor.
 */
-package CopulaResources;
+package Others;
 import org.apache.lucene.classification.Classifier;
 import org.apache.lucene.classification.ClassificationResult;
 
