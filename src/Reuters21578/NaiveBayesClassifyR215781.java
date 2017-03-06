@@ -17,7 +17,7 @@ import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.LeafReader;
-import org.apache.lucene.classification.document.KNearestNeighborDocumentClassifier;
+import org.apache.lucene.classification.document.SimpleNaiveBayesDocumentClassifier;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -47,9 +47,9 @@ import org.apache.lucene.index.MultiFields;
  */
 
 
-public class KNNClassifyR21578 {
+public class NaiveBayesClassifyR215781 {
 
-    ClassificationResult<BytesRef> classifyDoc(KNearestNeighborDocumentClassifier knn, String path) {
+    ClassificationResult<BytesRef> classifyDoc(SimpleNaiveBayesDocumentClassifier snb, String path) {
 
         ClassificationResult<BytesRef> res=null;
         try {
@@ -82,7 +82,7 @@ public class KNNClassifyR21578 {
 
             //###Read current Doc###
 
-            res = knn.assignClass(luceneDoc);
+            res = snb.assignClass(luceneDoc);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -118,8 +118,8 @@ public class KNNClassifyR21578 {
             //For single Leaf (Segment in Index)
             LeafReaderContext leaf = leaves.get(0);
             LeafReader atomicReader = leaf.reader();
-            KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
-                    TFIDF, null, 10, 0, 0, "Topics", field2analyzer, "Text");
+            SimpleNaiveBayesDocumentClassifier snb = new SimpleNaiveBayesDocumentClassifier(atomicReader,
+                    null, "Topics", field2analyzer, "Text");
             //#######Read Index and Train#########
             
             
@@ -152,7 +152,7 @@ public class KNNClassifyR21578 {
                         System.out.println("Unknown File: " + file.getAbsolutePath());
                         continue;
                     }
-                    ClassificationResult<BytesRef> res = classifyDoc(knn, file.getAbsolutePath());
+                    ClassificationResult<BytesRef> res = classifyDoc(snb, file.getAbsolutePath());
                     BytesRef resClass = res.getAssignedClass();
                     String predClass = resClass.utf8ToString();
                     //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
@@ -171,8 +171,7 @@ public class KNNClassifyR21578 {
     }
 
     public static void main(String[] args) {
-        KNNClassifyR21578 cl = new KNNClassifyR21578();
-        //cl.performClassification("/Users/sounakbanerjee/Desktop/Temp/index", "");
+        NaiveBayesClassifyR215781 cl = new NaiveBayesClassifyR215781();
         //String testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
         String testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";
         //String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index";

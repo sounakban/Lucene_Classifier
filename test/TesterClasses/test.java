@@ -33,6 +33,7 @@ import java.util.HashMap;
 import CopulaResources.TermPair;
 import CopulaResources.TermCooccurence;
 import java.util.ArrayList;
+import java.util.Collections;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.DirectoryReader;
@@ -273,6 +274,20 @@ public class test {
         Analyzer analyzer = new StandardAnalyzer();
         TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10, flpth);
         
+        
+        
+        //Effect of sort on negetive num
+        ArrayList<Integer> str = new ArrayList();
+        str.add(8);
+        str.add(-9);
+        str.add(-21);
+        str.add(-23);
+        str.add(28);
+        str.add(29);
+        str.add(-35);
+        Collections.sort(str);
+        System.out.println(str.get(str.size()-1));
+        System.out.println(Math.log(0));
         
     }
 }

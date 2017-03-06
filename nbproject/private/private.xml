@@ -2,6 +2,10 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group/>
+        <group>
+            <file>file:/home/sounak/work/Lucene_Classifier/src/CopulaResources/GumbelCopulaClassifierTFIDF.java</file>
+            <file>file:/home/sounak/work/Lucene_Classifier/test/TesterClasses/test.java</file>
+            <file>file:/home/sounak/work/Lucene_Classifier/src/Reuters21578/CopulaClassifyR21578.java</file>
+        </group>
     </open-files>
 </project-private>

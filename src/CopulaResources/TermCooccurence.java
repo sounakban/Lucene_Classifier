@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 
 import org.apache.lucene.index.IndexReader;
@@ -115,41 +116,50 @@ public class TermCooccurence implements Serializable {
     
     public Integer getClassFreqSum (String tpClass) {
         Integer sum = 0;
-        if (tpClass == null || tpClass.equals("")) {
+        if (tpClass == null || tpClass.equals("")) 
             tpClass = "no_class";
-        }
+        
         HashMap<TermPair, Integer> classFreqList = this.CooccurenceList.get(tpClass);
         if (classFreqList == null) 
             return null;
-        for (Integer value : classFreqList.values()) {
+        
+        for (Integer value : classFreqList.values()) 
             sum += value;
-        }
+        
         return sum;
     }
     
     
     public Integer getCount(TermPair tp, String tpClass) {
-        if (tpClass == null || tpClass.equals("")) {
+        if (tpClass == null || tpClass.equals("")) 
             tpClass = "no_class";
-        }
+        
         HashMap<TermPair, Integer> classFreqList = this.CooccurenceList.get(tpClass);
         if (classFreqList == null) 
             return null;
+        
         return classFreqList.get(tp);
     }
     
     
+    public String[] getClassList() {
+        Set<String> keys = this.CooccurenceList.keySet();
+        String[] classList = keys.toArray(new String[keys.size()]);
+        return classList;
+    }
+    
+    
     public static TermCooccurence generateCooccurencebyClass (IndexReader indexReader, String classFieldName, String textFieldName, Analyzer analyzer, int minFreq, int maxFreq) throws IOException {
+        System.out.println(":::Generating Term-Pair List:::");
         TermCooccurence CooccurList = new TermCooccurence();
         Terms classes = MultiFields.getTerms(indexReader, classFieldName);
         if (classes != null) {
             TermsEnum classesEnum = classes.iterator();
             BytesRef nextClass;
-            int breakingtest = 1;
             while ((nextClass = classesEnum.next()) != null) {
                 if (nextClass.length > 0) {
                     Term term = new Term(classFieldName, nextClass);
-                    String tpClass = nextClass.toString();
+                    String tpClass = nextClass.utf8ToString();
                     BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
                     booleanQuery.add(new BooleanClause(new TermQuery(term), BooleanClause.Occur.MUST));
                     IndexSearcher indexSearcher = new IndexSearcher(indexReader);
@@ -166,27 +176,24 @@ public class TermCooccurence implements Serializable {
                         }
                     }
                 }
-                if (breakingtest == 1)
-                    break;
-                else
-                    breakingtest++;
             }
         }
+        System.out.println(":::Generation Complete:::");
         return CooccurList;
     }
     
     
     public static void generateCooccurencebyClass (IndexReader indexReader, String classFieldName, String textFieldName, Analyzer analyzer, int minFreq, int maxFreq, Path saveDir) throws IOException {
+        System.out.println(":::Generating Term-Pair List:::");
         TermCooccurence CooccurList = new TermCooccurence();
         Terms classes = MultiFields.getTerms(indexReader, classFieldName);
         if (classes != null) {
             TermsEnum classesEnum = classes.iterator();
             BytesRef nextClass;
-            int breakingtest = 1;
             while ((nextClass = classesEnum.next()) != null) {
                 if (nextClass.length > 0) {
                     Term term = new Term(classFieldName, nextClass);
-                    String tpClass = nextClass.toString();
+                    String tpClass = nextClass.utf8ToString();
                     BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
                     booleanQuery.add(new BooleanClause(new TermQuery(term), BooleanClause.Occur.MUST));
                     IndexSearcher indexSearcher = new IndexSearcher(indexReader);
@@ -203,14 +210,11 @@ public class TermCooccurence implements Serializable {
                         }
                     }
                 }
-                if (breakingtest == 1)
-                    break;
-                else
-                    breakingtest++;
             }
         }
         CooccurList.trim(minFreq, maxFreq);
         CooccurList.savetoFile(saveDir);
+        System.out.println(":::Generation Complete:::");
     }
     
     

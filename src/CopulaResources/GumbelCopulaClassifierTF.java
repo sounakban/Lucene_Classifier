@@ -4,14 +4,9 @@ package CopulaResources;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.function.BiConsumer;
 
 import org.apache.lucene.classification.Classifier;
 import org.apache.lucene.classification.ClassificationResult;
@@ -44,7 +39,7 @@ import org.apache.lucene.search.TopDocs;
 
 
 
-public class GumbelCopulaClassifier implements Classifier<BytesRef>{
+public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
     
     /**
      * {@link org.apache.lucene.index.IndexReader} used to access the {@link org.apache.lucene.classification.Classifier}'s
@@ -93,7 +88,9 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
      * @param cooccurenceTrainData a TermCooccurence object generated from the training index.
      * @param textFieldNames the name of the fields used as the inputs for the classifier, NO boosting supported per field
      */
-    public GumbelCopulaClassifier(IndexReader indexReader, Analyzer analyzer, Query query, String classFieldName, TermCooccurence cooccurenceTrainData, String... textFieldNames) {
+    
+    
+    public GumbelCopulaClassifierTF(IndexReader indexReader, Analyzer analyzer, Query query, String classFieldName, TermCooccurence cooccurenceTrainData, String... textFieldNames) {
         this.indexReader = indexReader;
         this.indexSearcher = new IndexSearcher(this.indexReader);
         this.textFieldNames = textFieldNames;
@@ -112,6 +109,7 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
         ClassificationResult<BytesRef> assignedClass = null;
         double maxscore = -Double.MAX_VALUE;
         for (ClassificationResult<BytesRef> c : assignedClasses) {
+                //System.out.println(c.getAssignedClass().utf8ToString() + ":" + c.getScore());
             if (c.getScore() > maxscore) {
                 assignedClass = c;
                 maxscore = c.getScore();
@@ -124,8 +122,8 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
      * {@inheritDoc}
      */
     @Override
-    public List<ClassificationResult<BytesRef>> getClasses(String text) throws IOException {
-        List<ClassificationResult<BytesRef>> assignedClasses = assignClassList(text);
+    public List<ClassificationResult<BytesRef>> getClasses(String inputDocument) throws IOException {
+        List<ClassificationResult<BytesRef>> assignedClasses = assignClassList(inputDocument);
         Collections.sort(assignedClasses);
         return assignedClasses;
     }
@@ -134,8 +132,8 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
      * {@inheritDoc}
      */
     @Override
-    public List<ClassificationResult<BytesRef>> getClasses(String text, int max) throws IOException {
-        List<ClassificationResult<BytesRef>> assignedClasses = assignClassList(text);
+    public List<ClassificationResult<BytesRef>> getClasses(String inputDocument, int max) throws IOException {
+        List<ClassificationResult<BytesRef>> assignedClasses = assignClassList(inputDocument);
         Collections.sort(assignedClasses);
         return assignedClasses.subList(0, max);
     }
@@ -148,25 +146,27 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
      * @throws IOException if assigning probabilities fails
      */
     protected List<ClassificationResult<BytesRef>> assignClassList(String inputDocument) throws IOException {
+        //System.out.println("GumbelCopulaClassifierTF.assignClassList");
         List<ClassificationResult<BytesRef>> assignedClasses = new ArrayList<>();
         Terms classes = MultiFields.getTerms(indexReader, classFieldName);
         if (classes != null) {
             TermsEnum classesEnum = classes.iterator();
             BytesRef next;
-            //String[] tokenizedText = tokenize(inputDocument);
             HashMap<TermPair, Integer> cooccuringTerms = TermCooccurence.generateCooccurences(inputDocument, this.analyzer);
-            int numDocsWithClass = countDocsWithClass();
+            //int numDocsWithClass = countDocsWithClass();
+            int numDocsWithClass = indexReader.getDocCount(classFieldName);
             while ((next = classesEnum.next()) != null) {
                 if (next.length > 0) {
                     Term term = new Term(this.classFieldName, next);
-                    double clVal = getPrior(term, numDocsWithClass) + getMaxLikelihood(cooccuringTerms, term, numDocsWithClass);
-                    System.out.println("Value : " + clVal);
-                    assignedClasses.add(new ClassificationResult<>(term.bytes(), clVal));
+                    Double clVal = Math.log(getPrior(term, numDocsWithClass)) + getLogLikelihood(cooccuringTerms, term, numDocsWithClass);
+                    //System.out.println("Class : " + next.utf8ToString() + "\tValue : " + clVal);
+                    assignedClasses.add(new ClassificationResult<>(term.bytes(), -clVal));
                 }
             }
         }
         // normalization; the values transforms to a 0-1 range
         return normClassificationResults(assignedClasses);
+        //return assignedClasses;
     }
     
     
@@ -224,11 +224,14 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
     
     
     private double getPrior(Term term, int docsWithClassSize) throws IOException {
-        return ((double) indexReader.docFreq(term)/docsWithClassSize);
+        Double result = ((double) indexReader.docFreq(term)/docsWithClassSize);
+        if (!result.isNaN())
+            return result;
+        else
+            return 0d;
     }
     
-    private double getMaxLikelihood(HashMap<TermPair, Integer> cooccuringTerms, Term term, int docsWithClass) throws IOException {
-        // for each word
+    private double getLogLikelihood(HashMap<TermPair, Integer> cooccuringTerms, Term term, int docsWithClass) throws IOException {
         double result = 1;
         String currClass = term.text();
         HashMap<String, Double> wordFreq = new HashMap();
@@ -237,7 +240,9 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
                 
         // classVocabulary : calculate the total dictionary size (with freq) in documents of class c (+|V|)
         double classVocabulary = getIndexTermFreqForClass(term, wordFreq) + docsWithClass;
-        double classtpVocabulary = cooccurenceTrainData.getClassFreqSum(currClass);
+        //System.out.println("All classes : " + Arrays.toString(cooccurenceTrainData.getClassList()));
+        //System.out.println("Current class : " + currClass + "\tFreq : " + cooccurenceTrainData.getClassFreqSum(currClass));
+        double classtpVocabulary = (double) cooccurenceTrainData.getClassFreqSum(currClass).intValue();
         
         
         cooccuringTerms.forEach((tp, tpdocfreq) -> {
@@ -250,15 +255,19 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
                 
                 // count the no of times the word appears in documents of class c (+1 for laplace smoothing)
                 // P(w|c) = num/totFreq
-                Double word1Probability = wordWeight.get(word1);
-                if (word1Probability == null) {
-                    word1Probability = (Double) (wordFreq.get(word1) + 1) / classVocabulary;
-                    wordWeight.put(word1, word1Probability);
+                Double word1Weight = wordWeight.get(word1);
+                if (word1Weight == null) {
+                    //tf
+                    Double word1Probability = (Double) (wordFreq.get(word1) + 1) / classVocabulary;
+                    word1Weight = word1Probability;
+                    wordWeight.put(word1, word1Weight);
                 }
-                Double word2Probability = wordWeight.get(word2);
-                if (word2Probability == null) {
-                    word2Probability = (Double) (wordFreq.get(word2) + 1) / classVocabulary;
-                    wordWeight.put(word2, word2Probability);
+                Double word2Weight = wordWeight.get(word2);
+                if (word2Weight == null) {
+                    //tf
+                    Double word2Probability = (Double) (wordFreq.get(word2) + 1) / classVocabulary;
+                    word2Weight = word2Probability;
+                    wordWeight.put(word2, word2Weight);
                 }
                 
                 Double tpProbability = tpTrainFreq / classtpVocabulary;
@@ -266,6 +275,10 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
                 //Jaccard(t1,t2) = (t1 intersection t2) /(t1 union t2)
                 double jaccardCoeff = tpTrainFreq / (word1Freq + word2Freq - tpTrainFreq);
                 corCoeffList.put(tp, jaccardCoeff);
+                
+                //PMI(t1,t2) = (P(t1)*P(t2)) /P(t1 union t2)
+                //double PMICoeff = tpProbability / (word1Weight + word2Weight - tpProbability);
+                //corCoeffList.put(tp, PMICoeff);
             }
         });
         
@@ -287,7 +300,9 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
         }
         
         for (double val : termPairCopulaValueList) {
-            result *= val;
+            Double temp = Math.log(val);
+            if (!temp.isNaN())
+                result += temp;
         }
         
         return result;
@@ -326,6 +341,7 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
      * @return the average number of unique terms
      * @throws IOException if a low level I/O problem happens
      */
+    
     private double getIndexTermFreqForClass(Term term, HashMap<String, Double> uniqueTerms) throws IOException {
         double totalSize = 0;
         BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
@@ -377,22 +393,19 @@ public class GumbelCopulaClassifier implements Classifier<BytesRef>{
             Collections.sort(assignedClasses);
             // this is a negative number closest to 0 = a
             double smax = assignedClasses.get(0).getScore();
+            double smin = assignedClasses.get(assignedClasses.size()-1).getScore();
+            double dinominator = smax - smin;
+            //System.out.println(smax);
             
-            double sumLog = 0;
-            // log(sum(exp(x_n-a)))
             for (ClassificationResult<BytesRef> cr : assignedClasses) {
-                // getScore-smax <=0 (both negative, smax is the smallest abs()
-                sumLog += Math.exp(cr.getScore() - smax);
+                double numerator = cr.getScore() - smin;
+                double score = numerator / dinominator;
+                //System.out.print(scoreDiff + ",");
+                //System.out.print(Math.exp(scoreDiff) + ";;");
+                returnList.add(new ClassificationResult<>(cr.getAssignedClass(), score));
             }
-            // loga=a+log(sum(exp(x_n-a))) = log(sum(exp(x_n)))
-            double loga = smax;
-            loga += Math.log(sumLog);
             
-            // 1/sum*x = exp(log(x))*1/sum = exp(log(x)-log(sum))
-            for (ClassificationResult<BytesRef> cr : assignedClasses) {
-                double scoreDiff = cr.getScore() - loga;
-                returnList.add(new ClassificationResult<>(cr.getAssignedClass(), Math.exp(scoreDiff)));
-            }
+            //System.out.println("\n--------------------------------");
         }
         return returnList;
     }

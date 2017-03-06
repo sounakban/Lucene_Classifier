@@ -1,10 +1,8 @@
-package Reuters21578;
+package RCV1;
 
 
 //For Classification
 import CommonResources.ConfusionMatrix;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
 import org.apache.lucene.store.FSDirectory;
@@ -17,7 +15,7 @@ import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.LeafReader;
-import org.apache.lucene.classification.document.KNearestNeighborDocumentClassifier;
+import org.apache.lucene.classification.document.SimpleNaiveBayesDocumentClassifier;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -30,6 +28,12 @@ import org.apache.lucene.util.BytesRef;
 import java.io.File;
 import java.util.List;
 import CommonResources.RanksNL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 
 /*
 //Get list of Training Classes
@@ -47,9 +51,9 @@ import org.apache.lucene.index.MultiFields;
  */
 
 
-public class KNNClassifyR21578 {
+public class NaiveBayesClassifyRCV1 {
 
-    ClassificationResult<BytesRef> classifyDoc(KNearestNeighborDocumentClassifier knn, String path) {
+    ClassificationResult<BytesRef> classifyDoc(SimpleNaiveBayesDocumentClassifier snb, String path) {
 
         ClassificationResult<BytesRef> res=null;
         try {
@@ -57,35 +61,37 @@ public class KNNClassifyR21578 {
             //###Read current Doc###
             Document luceneDoc = new Document();
             File inputFile = new File(path);
-            FileReader inputFileReader = new FileReader(inputFile);
-            BufferedReader read = new BufferedReader(inputFileReader);
+            SAXBuilder saxBuilder = new SAXBuilder();
+            org.jdom2.Document document = saxBuilder.build(inputFile);
 
-            //System.out.println("DocID : " + inputFile.getName() );
-            String docID = inputFile.getName();
+            Element rootElement = document.getRootElement();
+            Attribute IDattribute = rootElement.getAttribute("itemid");
+            String docID = IDattribute.getValue();
+            //System.out.println("DocID : " + docID );
             luceneDoc.add(new StringField("DocID", docID, Field.Store.YES));
 
-            String line = "";
-            while (line.equals("")) {
-                line = read.readLine();
-            }
-            //System.out.println("Headline : "+ line.replaceAll("\\<.*?\\> ", "").trim());
-            String headline = line.replaceAll("\\<.*?\\> ", "").trim();
+            //System.out.println("Headline : "+ rootElement.getChild("headline").getText());
+            String headline = rootElement.getChild("headline").getText();
             luceneDoc.add(new StringField("Headline", headline, Field.Store.YES));
 
-            StringBuffer temp = new StringBuffer();
-            while ((line = read.readLine()) != null) {
-                temp.append(line.trim()).append(" ");
+            List<Element> docText = rootElement.getChild("text").getChildren();
+            //System.out.println("Text : \n");
+            String text = "";
+            for (int temp = 0; temp < docText.size(); temp++) {
+                Element Paragraph = docText.get(temp);
+                //System.out.println(Paragraph.getText());
+                text = text + Paragraph.getText().trim();
             }
-            String text = temp.toString();
-            //System.out.println("Text : \n" + text);
             luceneDoc.add(new TextField("Text", text, Field.Store.YES));
 
             //###Read current Doc###
 
-            res = knn.assignClass(luceneDoc);
+            res = snb.assignClass(luceneDoc);
 
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (JDOMException ex) {
+            Logger.getLogger(NaiveBayesClassifyRCV1.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return res;
@@ -118,8 +124,8 @@ public class KNNClassifyR21578 {
             //For single Leaf (Segment in Index)
             LeafReaderContext leaf = leaves.get(0);
             LeafReader atomicReader = leaf.reader();
-            KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
-                    TFIDF, null, 10, 0, 0, "Topics", field2analyzer, "Text");
+            SimpleNaiveBayesDocumentClassifier snb = new SimpleNaiveBayesDocumentClassifier(atomicReader,
+                    null, "Topics", field2analyzer, "Text");
             //#######Read Index and Train#########
             
             
@@ -152,7 +158,7 @@ public class KNNClassifyR21578 {
                         System.out.println("Unknown File: " + file.getAbsolutePath());
                         continue;
                     }
-                    ClassificationResult<BytesRef> res = classifyDoc(knn, file.getAbsolutePath());
+                    ClassificationResult<BytesRef> res = classifyDoc(snb, file.getAbsolutePath());
                     BytesRef resClass = res.getAssignedClass();
                     String predClass = resClass.utf8ToString();
                     //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
@@ -171,7 +177,7 @@ public class KNNClassifyR21578 {
     }
 
     public static void main(String[] args) {
-        KNNClassifyR21578 cl = new KNNClassifyR21578();
+        NaiveBayesClassifyRCV1 cl = new NaiveBayesClassifyRCV1();
         //cl.performClassification("/Users/sounakbanerjee/Desktop/Temp/index", "");
         //String testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
         String testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";

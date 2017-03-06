@@ -46,10 +46,11 @@ public class DumpIndex {
 
     public void dump() throws XMLStreamException, FactoryConfigurationError,
             CorruptIndexException, IOException {
-        XMLStreamWriter out = XMLOutputFactory.newInstance()
-                .createXMLStreamWriter(new FileWriter("/Users/sounakbanerjee/Desktop/Temp/XMLDump/dump.xml"));
-
-        FSDirectory index = FSDirectory.open(Paths.get("/Users/sounakbanerjee/Desktop/Temp/index"));
+        //XMLStreamWriter out = XMLOutputFactory.newInstance().createXMLStreamWriter(new FileWriter("/Users/sounakbanerjee/Desktop/Temp/XMLDump/dump.xml"));
+        XMLStreamWriter out = XMLOutputFactory.newInstance().createXMLStreamWriter(new FileWriter("/home/sounak/work/expesriment Byproducts"));
+        
+        //FSDirectory index = FSDirectory.open(Paths.get("/Users/sounakbanerjee/Desktop/Temp/index"));
+        FSDirectory index = FSDirectory.open(Paths.get("/home/sounak/work/expesriment Byproducts/index/reuters21578"));
         IndexReader reader = DirectoryReader.open(index);
         //out.writeStartDocument();
         out.writeStartDocument("utf-8", "1.0");

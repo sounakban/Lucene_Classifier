@@ -1,17 +1,15 @@
-package Reuters21578;
+package RCV1;
 
 
 //For Classification
 import CommonResources.ConfusionMatrix;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.DirectoryReader;
-import CopulaResources.*;
 import CopulaResources.TermCooccurence;
+import CopulaResources.*;
 
 
 import org.apache.lucene.document.Document;
@@ -26,10 +24,19 @@ import org.apache.lucene.util.BytesRef;
 import java.io.File;
 import CommonResources.RanksNL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+
+
+
+//For Reading test Docs
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 
 
 
@@ -40,7 +47,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 
 
-public class CopulaClassifyR21578 {
+public class CopulaClassifyRCV1 {
 
     //ClassificationResult<BytesRef> classifyDoc(GumbelCopulaClassifierTF gcc, String path) {
     ClassificationResult<BytesRef> classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
@@ -51,27 +58,27 @@ public class CopulaClassifyR21578 {
             //###Read current Doc###
             Document luceneDoc = new Document();
             File inputFile = new File(path);
-            FileReader inputFileReader = new FileReader(inputFile);
-            BufferedReader read = new BufferedReader(inputFileReader);
+            SAXBuilder saxBuilder = new SAXBuilder();
+            org.jdom2.Document document = saxBuilder.build(inputFile);
 
-            //System.out.println("DocID : " + inputFile.getName() );
-            String docID = inputFile.getName();
+            Element rootElement = document.getRootElement();
+            Attribute IDattribute = rootElement.getAttribute("itemid");
+            String docID = IDattribute.getValue();
+            //System.out.println("DocID : " + docID );
             luceneDoc.add(new StringField("DocID", docID, Field.Store.YES));
 
-            String line = "";
-            while (line.equals("")) {
-                line = read.readLine();
-            }
-            //System.out.println("Headline : "+ line.replaceAll("\\<.*?\\> ", "").trim());
-            String headline = line.replaceAll("\\<.*?\\> ", "").trim();
+            //System.out.println("Headline : "+ rootElement.getChild("headline").getText());
+            String headline = rootElement.getChild("headline").getText();
             luceneDoc.add(new StringField("Headline", headline, Field.Store.YES));
 
-            StringBuffer temp = new StringBuffer();
-            while ((line = read.readLine()) != null) {
-                temp.append(line.trim()).append(" ");
+            List<Element> docText = rootElement.getChild("text").getChildren();
+            //System.out.println("Text : \n");
+            String text = "";
+            for (int temp = 0; temp < docText.size(); temp++) {
+                Element Paragraph = docText.get(temp);
+                //System.out.println(Paragraph.getText());
+                text = text + Paragraph.getText().trim();
             }
-            String text = temp.toString();
-            //System.out.println("Text : \n" + text);
             luceneDoc.add(new TextField("Text", text, Field.Store.YES));
 
             //###Read current Doc###
@@ -80,6 +87,8 @@ public class CopulaClassifyR21578 {
 
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (JDOMException ex) {
+            Logger.getLogger(CopulaClassifyRCV1.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return res;
@@ -141,12 +150,12 @@ public class CopulaClassifyR21578 {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(CopulaClassifyR21578.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CopulaClassifyRCV1.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     public static void main(String[] args) {
-        CopulaClassifyR21578 cl = new CopulaClassifyR21578();
+        CopulaClassifyRCV1 cl = new CopulaClassifyRCV1();
         //testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
         //String indexLoc = "/Users/sounakbanerjee/Desktop/Temp/index";
         String testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";
