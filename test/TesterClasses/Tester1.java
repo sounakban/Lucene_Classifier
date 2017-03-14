@@ -45,7 +45,7 @@ import org.apache.lucene.store.FSDirectory;
  *
  * @author sounakbanerjee
  */
-public class test {
+public class Tester1 {
     
     static<T> void println(T arg) { System.out.println(arg); }
     
@@ -218,7 +218,7 @@ public class test {
         
         
         //Test Termpair Class
-        test.CooccurenceList = new HashMap();
+        Tester1.CooccurenceList = new HashMap();
         TermPair t1 = new TermPair("Just a Coincedence","correlation");
         TermPair t2 = new TermPair("correlation","Just a Coincedence");
         System.out.println("Are they equal? : " + t1.equals(t2));

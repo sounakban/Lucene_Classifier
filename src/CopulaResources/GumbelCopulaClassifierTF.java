@@ -153,7 +153,6 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
             TermsEnum classesEnum = classes.iterator();
             BytesRef next;
             HashMap<TermPair, Integer> cooccuringTerms = TermCooccurence.generateCooccurences(inputDocument, this.analyzer);
-            //int numDocsWithClass = countDocsWithClass();
             int numDocsWithClass = indexReader.getDocCount(classFieldName);
             while ((next = classesEnum.next()) != null) {
                 if (next.length > 0) {
@@ -194,33 +193,6 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
      * return result.toArray(new String[result.size()]);
      * }
      */
-    
-    
-    /**
-     * count the number of documents in the index having at least a value for the 'class' field
-     *
-     * @return the no. of documents having a value for the 'class' field
-     * @throws IOException if accessing to term vectors or search fails
-     */
-    protected int countDocsWithClass() throws IOException {
-        Terms terms = MultiFields.getTerms(this.indexReader, this.classFieldName);
-        int docCount;
-        if (terms == null || terms.getDocCount() == -1) { // in case codec doesn't support getDocCount
-            TotalHitCountCollector classQueryCountCollector = new TotalHitCountCollector();
-            BooleanQuery.Builder q = new BooleanQuery.Builder();
-            q.add(new BooleanClause(new WildcardQuery(new Term(classFieldName, String.valueOf(WildcardQuery.WILDCARD_STRING))), BooleanClause.Occur.MUST));
-            if (query != null) {
-                q.add(query, BooleanClause.Occur.MUST);
-            }
-            indexSearcher.search(q.build(),
-                    classQueryCountCollector);
-            docCount = classQueryCountCollector.getTotalHits();
-        } else {
-            docCount = terms.getDocCount();
-        }
-        return docCount;
-    }
-    
     
     
     private double getPrior(Term term, int docsWithClassSize) throws IOException {

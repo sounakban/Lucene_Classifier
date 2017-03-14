@@ -12,7 +12,6 @@ import org.apache.lucene.document.Document;
 import java.nio.file.Paths;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.codecs.lucene62.Lucene62Codec;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StringField;
@@ -59,8 +58,8 @@ public class IndexerR21578 {
             }
             String text = temp.toString();
             //System.out.println("Text : \n");
-            //luceneDoc.add(new TextField("Text", text, Field.Store.YES));
-            luceneDoc.add(new Field("Text", text, ft));
+            //luceneDoc.add(new TextField("Text", text, Field.Store.YES));      //Index without term-vectors
+            luceneDoc.add(new Field("Text", text, ft));                         //Index with term-vectors
 
             luceneDoc.add(new StringField("Topics", docClass, Field.Store.YES));
             //System.out.println("Doc Class : " + docClass);
@@ -122,6 +121,7 @@ public class IndexerR21578 {
         //For Linux
         String indexDirectoryName = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
         String corpusFolder = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/training";
+        
         ind.CreateIndex(indexDirectoryName, corpusFolder);
     }
 }

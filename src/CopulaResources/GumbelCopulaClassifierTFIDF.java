@@ -10,7 +10,6 @@ import java.util.HashMap;
 import org.apache.lucene.classification.Classifier;
 import org.apache.lucene.classification.ClassificationResult;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
@@ -21,8 +20,6 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TotalHitCountCollector;
-import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.search.ScoreDoc;
@@ -155,8 +152,10 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
             while ((next = classesEnum.next()) != null) {
                 if (next.length > 0) {
                     Term term = new Term(this.classFieldName, next);
-                    Double clVal = Math.log(getPrior(term, numDocsWithClass)) + getLogLikelihood(cooccuringTerms, term);
-                    //System.out.println("Class : " + next.utf8ToString() + "\tValue : " + clVal);
+                    double prior = Math.log(getPrior(term, numDocsWithClass));
+                    double logLikelihood = getLogLikelihood(cooccuringTerms, term);        
+                    Double clVal = prior + logLikelihood;
+                    //System.out.println("Class : " + next.utf8ToString() + "\tScore : " + clVal + "\tPrior : " + prior + "\tLikelihood : " + logLikelihood);
                     assignedClasses.add(new ClassificationResult<>(term.bytes(), -clVal));
                 }
             }
@@ -225,7 +224,7 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
             Double word1Freq = wordFreq.get(word1);
             Double word2Freq = wordFreq.get(word2);
             //System.out.println(word1 + " : " + word1Freq + " ;;; " + word2 + " : " + word2Freq);
-            if (word1Freq != null && word2Freq != null && tpTrainFreq != null) {
+            if (word1Freq != null && word1Freq != 0 && word2Freq != null && word2Freq != 0 && tpTrainFreq != null && tpTrainFreq != 0) {
                 
                 // count the no of times the word appears in documents of class c (+1 for laplace smoothing)
                 // P(w|c) = num/totFreq
@@ -235,7 +234,7 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
                     //System.out.println(wordFreq.get(word1));
                     Double word1TF = (Double) (wordFreq.get(word1) + 1) / classVocabulary;
                     //idf
-                    Double word1IDF = Math.log(numofDocsinClass / worddocFreq.get(word1));
+                    Double word1IDF = Math.log((1 + numofDocsinClass) / (1 + worddocFreq.get(word1)));
                     
                     word1Weight = word1TF * word1IDF;
                     //System.out.println(numofDocsinClass + " : " + worddocFreq.get(word1));
@@ -246,9 +245,10 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
                 Double word2Weight = wordWeight.get(word2);
                 if (word2Weight == null) {
                     //tf
+                    //System.out.println(wordFreq.get(word2));
                     Double word2TF = (Double) (wordFreq.get(word2) + 1) / classVocabulary;
                     //idf
-                    Double word2IDF = Math.log(numofDocsinClass / worddocFreq.get(word2));
+                    Double word2IDF = Math.log((1 + numofDocsinClass) / (1 + worddocFreq.get(word2)));
                     
                     word2Weight = word2TF * word2IDF;
                     
@@ -354,7 +354,8 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
             for (String textFieldName : textFieldNames) {
                 Terms termVector;
                 if ((termVector = indexReader.getTermVector(scoreDoc.doc, textFieldName)) == null) {
-                    System.out.println("Skipped : " + scoreDoc.doc);
+                    System.out.println("Skipped [in GumbelCopulaClassifierTFIDF]: " + scoreDoc.doc);
+                    System.out.println("Make sure you indexed term vectors for text fields.");
                     continue;
                 }
                     

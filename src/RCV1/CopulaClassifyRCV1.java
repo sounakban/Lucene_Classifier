@@ -24,11 +24,17 @@ import org.apache.lucene.util.BytesRef;
 import java.io.File;
 import CommonResources.RanksNL;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.MultiFields;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 
 
 
@@ -50,13 +56,15 @@ import org.jdom2.input.SAXBuilder;
 public class CopulaClassifyRCV1 {
 
     //ClassificationResult<BytesRef> classifyDoc(GumbelCopulaClassifierTF gcc, String path) {
-    ClassificationResult<BytesRef> classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
-
-        ClassificationResult<BytesRef> res=null;
+    HashMap<String, Object> classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
+        List<ClassificationResult<BytesRef>> pred = null;
+        String topics = "";
+        HashMap<String, Object> res = new HashMap();
+        
+        Document luceneDoc = new Document();
         try {
             
             //###Read current Doc###
-            Document luceneDoc = new Document();
             File inputFile = new File(path);
             SAXBuilder saxBuilder = new SAXBuilder();
             org.jdom2.Document document = saxBuilder.build(inputFile);
@@ -80,10 +88,33 @@ public class CopulaClassifyRCV1 {
                 text = text + Paragraph.getText().trim();
             }
             luceneDoc.add(new TextField("Text", text, Field.Store.YES));
-
             //###Read current Doc###
 
-            res = gcc.assignClass(text);
+            //###Extract topics###
+            List<Element> MetaList = rootElement.getChild("metadata").getChildren();
+            for (int i = 0; i < MetaList.size(); i++) {
+                Element Meta = MetaList.get(i);
+                if ("codes".equals(Meta.getName())) {
+                    Attribute MetaAttribute = Meta.getAttribute("class");
+                    if (MetaAttribute.getValue().contains("topics")) {
+                        List<Element> CodeList = Meta.getChildren();
+                        for (int j = 0; j < CodeList.size(); j++) {
+                            Element Code = CodeList.get(j);
+                            Attribute codeAttribute = Code.getAttribute("code");
+                            topics = topics + codeAttribute.getValue();
+                            if (j != CodeList.size() - 1) {
+                                topics = topics + ",";
+                            }
+                        }
+                    }
+                }
+            }
+            //###Extract topics###
+            
+            
+            pred = gcc.getClasses(text);
+            res.put("Predicted", pred);
+            res.put("Original", topics);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -107,7 +138,7 @@ public class CopulaClassifyRCV1 {
             //Term-Pair
             //TermCooccurence cooccur = TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10);
             Path termPairIndex = Paths.get("/home/sounak/work1/test1");
-            //TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10, termPairIndex);
+            TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 1, 10, termPairIndex);
             TermCooccurence cooccur = new TermCooccurence(termPairIndex);
             
 
@@ -120,32 +151,86 @@ public class CopulaClassifyRCV1 {
             //#######Read Index and Train#########
             
             
-            ConfusionMatrix cMatrix = new ConfusionMatrix();
             
-            //########Iterate through Test Docs : Classify & Report##########
+            //###########Get Class List of Training Classes##########
+            Terms classes = MultiFields.getTerms(reader, "Topics");
+            TermsEnum classesEnum = classes.iterator();
+            BytesRef next;
+            String allClassList = "";
+            while ((next = classesEnum.next()) != null) {
+                if (next.length > 0) {
+                    allClassList = allClassList + next.utf8ToString() + ",";
+                }
+            }
+            //System.out.println("Classes : " + allClassList);=
+            //###########Get Class List of Training Classes##########
+            
+            
+            //Create list of Confusion-Matrices
+            HashMap<String, ConfusionMatrix> cMatrices = new HashMap();
+            ConfusionMatrix cMatrix = null;
+            for (String Class : allClassList.split(",")) {
+                cMatrix = new ConfusionMatrix();
+                cMatrices.put(Class, cMatrix);
+            }
+            
+            //########Iterate through Test Docs : Classify##########
             File testFolder = new File(testData);
             File[] listOfFolders = testFolder.listFiles();
             for (File folder : listOfFolders) {
                 File classFolder = new File(folder.getAbsolutePath());
-                String originalClass = classFolder.getName();
                 File[] listOfFiles = classFolder.listFiles();
                 for (File file : listOfFiles) {
                     if (file.getName().contains("\\.")) {
                         System.out.println("Unknown File: " + file.getAbsolutePath());
                         continue;
                     }
-                    ClassificationResult<BytesRef> res = classifyDoc(gcc, file.getAbsolutePath());
-                    BytesRef resClass = res.getAssignedClass();
-                    String predClass = resClass.utf8ToString();
-                    //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
-                    cMatrix.increaseValue(originalClass, predClass);
+                    HashMap<String, Object> res = classifyDoc(gcc, file.getAbsolutePath());
+                    //Predicted Class
+                    List<ClassificationResult<BytesRef>> predResults = (List<ClassificationResult<BytesRef>>) res.get("Predicted");
+                    List<String> predClassList = new ArrayList();
+                    for (ClassificationResult<BytesRef> predRes : predResults) {
+                        BytesRef resClass = predRes.getAssignedClass();
+                        predClassList.add(resClass.utf8ToString());
+                    }
+                    //Original Class
+                    String originalClasses = (String) res.get("Original");
+                    List<String> originalClassList = Arrays.asList(originalClasses.split(","));
+                    for (String Class : allClassList.split(",")) {
+                        cMatrix = cMatrices.get(Class);
+                        if (originalClassList.contains(Class) && predClassList.contains(Class)) {
+                            //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
+                            cMatrix.increaseValue("true", "true");
+                        }
+                        else if (!originalClassList.contains(Class) && predClassList.contains(Class)) {
+                            //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
+                            cMatrix.increaseValue("false", "true");
+                        }
+                        else if (originalClassList.contains(Class) && !predClassList.contains(Class)) {
+                            //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
+                            cMatrix.increaseValue("true", "false");
+                        }
+                        else if (!originalClassList.contains(Class) && !predClassList.contains(Class)) {
+                            //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
+                            cMatrix.increaseValue("false", "false");
+                        }
+                    }
                 }
             }
-            System.out.println("F-Measure: " + cMatrix.getMacroFMeasure());
-            System.out.println("Precision: " + cMatrix.getAvgPrecision());
-            System.out.println("Recall: " + cMatrix.getAvgRecall());
+            //########Iterate through Test Docs : Classify##########
             
-            //########Iterate through Test Docs : Classify & Report##########
+            //########Report Results##########
+            double FSum = 0;
+            for (String Class : allClassList.split(",")) {
+                cMatrix = cMatrices.get(Class);
+                System.out.println("Class : " + Class + "\tF-Measure: " + cMatrix.getMacroFMeasure());
+                FSum += cMatrix.getMacroFMeasure();
+                //System.out.println("Precision: " + cMatrix.getAvgPrecision());
+                //System.out.println("Recall: " + cMatrix.getAvgRecall());
+                
+            }
+            System.out.println("Macro F-Measure : " + FSum/(double)allClassList.split(",").length);
+            //########Report Results##########
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -156,10 +241,10 @@ public class CopulaClassifyRCV1 {
 
     public static void main(String[] args) {
         CopulaClassifyRCV1 cl = new CopulaClassifyRCV1();
-        //testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
-        //String indexLoc = "/Users/sounakbanerjee/Desktop/Temp/index";
-        String testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";
-        String indexLoc = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
-        cl.performClassification(indexLoc, testData);
+        //String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index";
+        String trainIndex = "/home/sounak/work/expesriment Byproducts/index/RCV1";
+        //String testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
+        String testData = "/home/sounak/work/Datasets/RCVsubsetTest";
+        cl.performClassification(trainIndex, testData);
     }
 }

@@ -23,6 +23,8 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import java.nio.charset.MalformedInputException;
+import org.apache.lucene.document.FieldType;
+import org.apache.lucene.index.IndexableField;
 
 
 /**
@@ -32,8 +34,15 @@ import java.nio.charset.MalformedInputException;
 public class IndexerRCV {
 
     //Read Reuters files and return the document data
-    Document readRCV(String path) {
+    Document readRCV(String path, IndexWriter writer) {
         Document luceneDoc = new Document();
+        
+        //For creating termvectors
+        FieldType ft = new FieldType(TextField.TYPE_STORED);
+        ft.setStoreTermVectors(true);
+        ft.setStoreTermVectorOffsets(true);
+        ft.setStoreTermVectorPositions(true);
+        
         try {
             File inputFile = new File(path);
             SAXBuilder saxBuilder = new SAXBuilder();
@@ -61,7 +70,8 @@ public class IndexerRCV {
                 //System.out.println(Paragraph.getText());
                 text = text + Paragraph.getText().trim();
             }
-            luceneDoc.add(new TextField("Text", text, Field.Store.YES));
+            //luceneDoc.add(new TextField("Text", text, Field.Store.YES));      //Index without term-vectors
+            luceneDoc.add(new Field("Text", text, ft));                         //Index with term-vectors
 
             //Extract codes form the Document
             List<Element> MetaList = rootElement.getChild("metadata").getChildren();
@@ -115,10 +125,9 @@ public class IndexerRCV {
         return luceneDoc;
     }
 
-    void CreateIndex() {
+    void CreateIndex(String indexDirectoryName, String corpusFolder) {
         try {
             //Create a new lucene index;
-            String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index";
             File indexDirectory = new File(indexDirectoryName);
             if (!indexDirectory.exists()) {
                 indexDirectory.mkdir();
@@ -128,21 +137,30 @@ public class IndexerRCV {
             IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
             iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
             IndexWriter writer = new IndexWriter(dir, iwc);
+            
             //Read XML Files
-            String corpusFolder = "/Users/sounakbanerjee/Desktop/Temp/untitled folder";
             File folder = new File(corpusFolder);
             File[] listOfFiles = folder.listFiles();
+            if (listOfFiles == null){
+                System.out.println("Empty directory!!!");
+                return;
+            }
             for (File file : listOfFiles) {
                 try {
                     if (!file.getAbsolutePath().contains(".xml")) {
                         System.out.println("Unknown file: " + file.getAbsolutePath());
                         continue;
                     }
-                    Document luceneDoc = readRCV(file.getAbsolutePath());
-                    writer.addDocument(luceneDoc);
+                    Document luceneDoc = readRCV(file.getAbsolutePath(), writer);
+                    IndexableField topics = luceneDoc.getField("Topics");
+                    luceneDoc.removeField("Topics");
+                    for (String topic : topics.stringValue().split(",")) {
+                        Document temp = luceneDoc;
+                        temp.add(new StringField("Topics", topic, Field.Store.YES));
+                        writer.addDocument(temp);
+                    }
                 } catch (MalformedInputException me) {
                     System.out.println("Error reading file: " + file.getAbsolutePath() + " :: Improper Encoding. ");
-                    //continue;
                 }
             }
             writer.close();
@@ -154,6 +172,10 @@ public class IndexerRCV {
     
     public static void main(String[] args) {
         IndexerRCV ind = new IndexerRCV();
-        ind.CreateIndex();
+        //String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index";
+        String indexDirectoryName = "/home/sounak/work/expesriment Byproducts/index/RCV1";
+        //String corpusFolder = "/Users/sounakbanerjee/Desktop/Temp/untitled folder";
+        String corpusFolder = "/home/sounak/work/Datasets/RCVsubset";
+        ind.CreateIndex(indexDirectoryName, corpusFolder);
     }
 }

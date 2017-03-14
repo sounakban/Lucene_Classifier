@@ -26,31 +26,27 @@ import org.apache.lucene.index.IndexableField;
  */
 
 
-
-public class DumpIndex {
-
     /**
      * Reads the index from the directory passed as argument or "index" if no
      * arguments are given.
      */
-    public static void main(String[] args) throws Exception {
-        String index = (args.length > 0 ? args[0] : "index");
-        new DumpIndex(index).dump();
-    }
 
-    private String dir;
+public class DumpIndex {
 
-    public DumpIndex(String dir) {
-        this.dir = dir;
+
+    private String inputDir;
+    private String outputDir;
+    
+    public DumpIndex(String inputDir, String outputDir) {
+        this.inputDir = inputDir;
+        this.outputDir = outputDir;
     }
 
     public void dump() throws XMLStreamException, FactoryConfigurationError,
             CorruptIndexException, IOException {
-        //XMLStreamWriter out = XMLOutputFactory.newInstance().createXMLStreamWriter(new FileWriter("/Users/sounakbanerjee/Desktop/Temp/XMLDump/dump.xml"));
-        XMLStreamWriter out = XMLOutputFactory.newInstance().createXMLStreamWriter(new FileWriter("/home/sounak/work/expesriment Byproducts"));
+        XMLStreamWriter out = XMLOutputFactory.newInstance().createXMLStreamWriter(new FileWriter(this.outputDir));
         
-        //FSDirectory index = FSDirectory.open(Paths.get("/Users/sounakbanerjee/Desktop/Temp/index"));
-        FSDirectory index = FSDirectory.open(Paths.get("/home/sounak/work/expesriment Byproducts/index/reuters21578"));
+        FSDirectory index = FSDirectory.open(Paths.get(this.inputDir));
         IndexReader reader = DirectoryReader.open(index);
         //out.writeStartDocument();
         out.writeStartDocument("utf-8", "1.0");
@@ -80,5 +76,21 @@ public class DumpIndex {
         out.writeCharacters("\n");
         out.writeEndElement();
         out.writeCharacters("\n");
+    }
+    
+    
+    public static void main(String[] args) throws Exception {
+        //String index = (args.length > 0 ? args[0] : "index");
+        
+        //OSx
+        //String inputDir = "/Users/sounakbanerjee/Desktop/Temp/index";
+        //String outputDir = "/Users/sounakbanerjee/Desktop/Temp/XMLDump/dump.xml";
+        
+        
+        //Linux
+        String inputDir = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
+        String outputDir = "/home/sounak/work/expesriment Byproducts/dump.xml";
+        DumpIndex dInd = new DumpIndex(inputDir, outputDir);
+        dInd.dump();
     }
 }
