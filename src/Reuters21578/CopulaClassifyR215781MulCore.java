@@ -28,6 +28,7 @@ import CommonResources.RanksNL;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -57,7 +58,7 @@ public class CopulaClassifyR215781MulCore {
         GumbelCopulaClassifierTFIDF classifier;
         //GumbelCopulaClassifierTF classifier;
 
-        //ClassificationResult<BytesRef> classifyDoc(GumbelCopulaClassifierTF gcc, String path) {
+        //public classifyDoc(GumbelCopulaClassifierTF gcc, String path) {
         public classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
             this.path = path;
             this.classifier = gcc;
@@ -118,7 +119,7 @@ public class CopulaClassifyR215781MulCore {
             //Term-Pair
             //TermCooccurence cooccur = TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10);
             Path termPairIndex = Paths.get("/home/sounak/work1/test1");
-            //TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10, termPairIndex);
+            TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 5, 40, termPairIndex);
             TermCooccurence cooccur = new TermCooccurence(termPairIndex);
             
 
@@ -137,6 +138,7 @@ public class CopulaClassifyR215781MulCore {
             int availThreads = Runtime.getRuntime().availableProcessors();
             if (availThreads>4)
                 availThreads -= 2;
+            System.out.println("Number of Threads used : " + availThreads);
             ExecutorService pool = Executors.newFixedThreadPool(availThreads); 
             
             //########Iterate through Test Docs : Classify & Report##########                    //Set max simultanious threads
@@ -154,14 +156,15 @@ public class CopulaClassifyR215781MulCore {
                     }
                     Callable<ClassificationResult<BytesRef>> thread = new classifyDoc(gcc, file.getAbsolutePath());
                     Future<ClassificationResult<BytesRef>> future = pool.submit(thread);
-                    hsMap.put(originalClass, future);
+                    hsMap.put(file+":"+originalClass, future);
                 }
             }
             pool.shutdown();
 
+            System.out.println("Number of test-docs: " + hsMap.size());
             for (HashMap.Entry<String, Future<ClassificationResult<BytesRef>>> entry : hsMap.entrySet())
             {
-                String originalClass = entry.getKey();
+                String originalClass = entry.getKey().split(":")[1];
                 Future<ClassificationResult<BytesRef>> value = entry.getValue();
                 ClassificationResult<BytesRef> res = value.get();
                 BytesRef resClass = res.getAssignedClass();
@@ -174,6 +177,12 @@ public class CopulaClassifyR215781MulCore {
             System.out.println("Recall: " + cMatrix.getAvgRecall());
             
             //########Iterate through Test Docs : Classify & Report##########
+            
+            /*
+            for (Map.Entry<String, Double> fMes : cMatrix.getFMeasureForLabels().entrySet()) {
+                System.out.println("Class: " + fMes.getKey() + "\tF-Measure: " + fMes.getValue());
+            }
+            */
             
             
         } catch (IOException e) {

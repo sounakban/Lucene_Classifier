@@ -178,6 +178,7 @@ public class TermCooccurence implements Serializable {
                 }
             }
         }
+        CooccurList.trim(minFreq, maxFreq);
         System.out.println(":::Generation Complete:::");
         return CooccurList;
     }
@@ -283,6 +284,8 @@ public class TermCooccurence implements Serializable {
     
     
     public void trim (int minFreq, int maxFreq)  {
+        if (maxFreq == 0)
+            maxFreq = Integer.MAX_VALUE;
         for (String tpClass : this.CooccurenceList.keySet()) {
             HashMap<TermPair, Integer> classCooccurenceList = this.CooccurenceList.get(tpClass);
             Iterator<HashMap.Entry<TermPair, Integer>> tpIterator = classCooccurenceList.entrySet().iterator();

@@ -1,0 +1,108 @@
+Copula w/ TFIDF:
+F-Measure: 0.5300407121510076
+Precision: 0.5813126368240937
+Recall: 0.534053172517174
+
+
+
+
+
+
+
+
+##############################################################################################
+:::Generating Term-Pair List:::
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 2, Max freq : 10 ]
+:::Generation Complete:::
+
+
+Copula w/ TF:
+F-Measure: 0.44780768246259656
+Precision: 0.4752130093093846
+Recall: 0.4543558312605424
+
+
+Copula w/ TF [Iteration 2]:
+F-Measure: 0.4481542867865402
+Precision: 0.4750265317407222
+Recall: 0.45555903108132256
+BUILD SUCCESSFUL (total time: 35 minutes 55 seconds
+
+
+Copula w/ TFIDF [Iteration 2]:
+F-Measure: 0.46990430991900123
+Precision: 0.49555113730831446
+Recall: 0.49663249797408177
+BUILD SUCCESSFUL (total time: 34 minutes 14 seconds)
+
+
+KNN:
+F-Measure: 0.6042766678806528
+Precision: 0.6420138069301091
+Recall: 0.5900714863155442
+
+
+NaiveBayes:
+F-Measure: 0.18392532558824387
+Precision: 0.3040197356973116
+Recall: 0.20925630708662019
+BUILD SUCCESSFUL (total time: 1 minute 38 seconds)
+
+
+
+
+
+
+
+
+##############################################################################################
+Copula w/ TFIDF :
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 5, Max freq : 50 ]
+F-Measure: 0.5282173461118622
+Precision: 0.5995157645263577
+Recall: 0.542609474340391
+BUILD SUCCESSFUL (total time: 14 minutes 46 seconds)
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 3, Max freq : 50 ]
+F-Measure: 0.5374684435908069
+Precision: 0.5933686640035336
+Recall: 0.5513981372708734
+BUILD SUCCESSFUL (total time: 14 minutes 52 seconds)
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 0, Max freq : 100 ]
+F-Measure: 0.5211900826159125
+Precision: 0.5397034453452901
+Recall: 0.5407509064837687
+BUILD SUCCESSFUL (total time: 23 minutes 46 seconds)
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 0, Max freq : 50 ]
+F-Measure: 0.5278784693718097
+Precision: 0.5737668328814844
+Recall: 0.5438796854163271
+BUILD SUCCESSFUL (total time: 25 minutes 20 seconds)
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 0, Max freq : NoLimit ]
+F-Measure: 0.4501211260146604
+Precision: 0.5224287404366974
+Recall: 0.49067052164808145
+BUILD SUCCESSFUL (total time: 21 minutes 6 seconds)
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 5, Max freq : 50 ]
+F-Measure: 0.5282173461118622
+Precision: 0.5995157645263577
+Recall: 0.542609474340391
+BUILD SUCCESSFUL (total time: 20 minutes 39 seconds)
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 3, Max freq : 25 ]
+F-Measure: 0.5163064809041399
+Precision: 0.5518661399325167
+Recall: 0.5345272811024475
+BUILD SUCCESSFUL (total time: 21 minutes 13 seconds)
