@@ -119,7 +119,7 @@ public class CopulaClassifyR215781MulCore {
             //Term-Pair
             //TermCooccurence cooccur = TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10);
             Path termPairIndex = Paths.get("/home/sounak/work1/test1");
-            TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 5, 40, termPairIndex);
+            TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 8, 50, termPairIndex);
             TermCooccurence cooccur = new TermCooccurence(termPairIndex);
             
 

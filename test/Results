@@ -37,9 +37,10 @@ BUILD SUCCESSFUL (total time: 34 minutes 14 seconds)
 
 
 KNN:
-F-Measure: 0.6042766678806528
-Precision: 0.6420138069301091
-Recall: 0.5900714863155442
+F-Measure: 0.5901437879875819
+Precision: 0.646063585944727
+Recall: 0.5842742716562149
+BUILD SUCCESSFUL (total time: 18 seconds)
 
 
 NaiveBayes:
@@ -57,6 +58,30 @@ BUILD SUCCESSFUL (total time: 1 minute 38 seconds)
 
 ##############################################################################################
 Copula w/ TFIDF :
+
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 8, Max freq : 50 ]
+F-Measure: 0.5171095188076704
+Precision: 0.5959717702489246
+Recall: 0.5342520428219302
+BUILD SUCCESSFUL (total time: 14 minutes 18 seconds)
+
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 10, Max freq : 50 ]
+F-Measure: 0.5234022960380939
+Precision: 0.5922691996356908
+Recall: 0.5378335980055863
+BUILD SUCCESSFUL (total time: 19 minutes 18 seconds)
+
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 5, Max freq : 40 ]
+F-Measure: 0.517105439757842
+Precision: 0.5886534624615807
+Recall: 0.535666816305504
+BUILD SUCCESSFUL (total time: 19 minutes 35 seconds)
 
 
 A Co-Occurence List already exists : attempting to overwrite. [Min freq : 5, Max freq : 50 ]
