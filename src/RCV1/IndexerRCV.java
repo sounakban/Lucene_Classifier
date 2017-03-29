@@ -140,27 +140,39 @@ public class IndexerRCV {
             
             //Read XML Files
             File folder = new File(corpusFolder);
-            File[] listOfFiles = folder.listFiles();
-            if (listOfFiles == null){
+            File[] listOfFolders = folder.listFiles();
+            if (listOfFolders == null){
                 System.out.println("Empty directory!!!");
                 return;
             }
-            for (File file : listOfFiles) {
-                try {
-                    if (!file.getAbsolutePath().contains(".xml")) {
-                        System.out.println("Unknown file: " + file.getAbsolutePath());
-                        continue;
+            for (File subFolder : listOfFolders) {
+                File currFolder = new File(subFolder.getAbsolutePath());
+                File[] listOfFiles = currFolder.listFiles();
+                if (listOfFiles == null){
+                    System.out.println("Empty directory: " + subFolder.getAbsolutePath());
+                    continue;
+                }
+                for (File file : listOfFiles) {
+                    try {
+                        if (!file.getAbsolutePath().contains(".xml")) {
+                            System.out.println("Unknown file: " + file.getAbsolutePath());
+                            continue;
+                        }
+                        Document luceneDoc = readRCV(file.getAbsolutePath(), writer);
+                        IndexableField topics = luceneDoc.getField("Topics");
+                        if(topics==null || topics.stringValue()==null || topics.stringValue().equals("")) {
+                            System.out.println("No topics on file: " + file.getAbsolutePath());
+                            continue;
+                        }
+                        luceneDoc.removeField("Topics");
+                        for (String topic : topics.stringValue().split(",")) {
+                            Document temp = luceneDoc;
+                            temp.add(new StringField("Topics", topic, Field.Store.YES));
+                            writer.addDocument(temp);
+                        }
+                    } catch (MalformedInputException me) {
+                        System.out.println("Error reading file: " + file.getAbsolutePath() + " :: Improper Encoding. ");
                     }
-                    Document luceneDoc = readRCV(file.getAbsolutePath(), writer);
-                    IndexableField topics = luceneDoc.getField("Topics");
-                    luceneDoc.removeField("Topics");
-                    for (String topic : topics.stringValue().split(",")) {
-                        Document temp = luceneDoc;
-                        temp.add(new StringField("Topics", topic, Field.Store.YES));
-                        writer.addDocument(temp);
-                    }
-                } catch (MalformedInputException me) {
-                    System.out.println("Error reading file: " + file.getAbsolutePath() + " :: Improper Encoding. ");
                 }
             }
             writer.close();
@@ -172,10 +184,15 @@ public class IndexerRCV {
     
     public static void main(String[] args) {
         IndexerRCV ind = new IndexerRCV();
-        //String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index";
-        String indexDirectoryName = "/home/sounak/work/expesriment Byproducts/index/RCV1";
-        //String corpusFolder = "/Users/sounakbanerjee/Desktop/Temp/untitled folder";
-        String corpusFolder = "/home/sounak/work/Datasets/RCVsubset";
+        
+        //MacOS
+        String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index/RCV1";
+        String corpusFolder = "/Volumes/Files/Work/Research/Information Retrieval/Data/Reuters/RCV1/Manual Subsets/RCV1 n-Docs/rcv1_topics100";
+        
+        //Linux
+        //String indexDirectoryName = "/home/sounak/work/expesriment Byproducts/index/RCV1";
+        //String corpusFolder = "/home/sounak/work/Datasets/RCVsubset";
+        
         ind.CreateIndex(indexDirectoryName, corpusFolder);
     }
 }

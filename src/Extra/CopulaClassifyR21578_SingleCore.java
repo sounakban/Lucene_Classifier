@@ -1,4 +1,4 @@
-package Reuters21578;
+package Extra;
 
 
 //For Classification
@@ -10,14 +10,10 @@ import java.nio.file.Paths;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.DirectoryReader;
-import java.util.Map;
-import java.util.HashMap;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.search.similarities.BM25Similarity;
-import org.apache.lucene.search.similarities.ClassicSimilarity;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.LeafReader;
-import org.apache.lucene.classification.document.KNearestNeighborDocumentClassifier;
+import CopulaResources.*;
+import CopulaResources.TermCooccurence;
+
+
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -28,16 +24,12 @@ import org.apache.lucene.util.BytesRef;
 
 //For Evaluation
 import java.io.File;
-import java.util.List;
 import CommonResources.RanksNL;
-
-/*
-//Get list of Training Classes
-import org.apache.lucene.index.Terms;
-import org.apache.lucene.index.TermsEnum;
-import org.apache.lucene.index.Fields;
-import org.apache.lucene.index.MultiFields;
-*/
+import java.nio.file.Path;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 
 
@@ -47,9 +39,11 @@ import org.apache.lucene.index.MultiFields;
  */
 
 
-public class KNNClassifyR21578 {
 
-    ClassificationResult<BytesRef> classifyDoc(KNearestNeighborDocumentClassifier knn, String path) {
+public class CopulaClassifyR21578_SingleCore {
+
+    //ClassificationResult<BytesRef> classifyDoc(GumbelCopulaClassifierTF gcc, String path) {
+    ClassificationResult<BytesRef> classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
 
         ClassificationResult<BytesRef> res=null;
         try {
@@ -82,7 +76,7 @@ public class KNNClassifyR21578 {
 
             //###Read current Doc###
 
-            res = knn.assignClass(luceneDoc);
+            res = gcc.assignClass(text);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -92,51 +86,29 @@ public class KNNClassifyR21578 {
     }
     
     
-    void performClassification(String indexLoc, String testData) {
+    void performClassification(String indexLoc, String testData, Path termPairIndex) {
         try {
             
             //#######Read Index and Train#########
             FSDirectory index = FSDirectory.open(Paths.get(indexLoc));
             IndexReader reader = DirectoryReader.open(index);
-
-            //Segmented reader
-            List<LeafReaderContext> leaves = reader.leaves();
-            System.out.println("Number of leaves: " + leaves.size());
-            BM25Similarity BM25 = new BM25Similarity();
-            ClassicSimilarity TFIDF = new ClassicSimilarity();
-            Map<String, Analyzer> field2analyzer = new HashMap<>();
-            field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer(RanksNL.stopWords));
+            Analyzer analyzer = new StandardAnalyzer(RanksNL.stopWords);
             
-            /*For Multiple Leaves (Segment in Index)
-            for (LeafReaderContext leaf : leaves) {
-                LeafReader atomicReader = leaf.reader();
-                KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
-                        BM25, null, 10, 0, 0, "Topics", field2analyzer, "text");
-            }
-             */
+            
+            //Term-Pair
+            //TermCooccurence cooccur = TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10);
+            //TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10, termPairIndex);
+            TermCooccurence cooccur = new TermCooccurence(termPairIndex);
+            
 
-            //For single Leaf (Segment in Index)
-            LeafReaderContext leaf = leaves.get(0);
-            LeafReader atomicReader = leaf.reader();
-            KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
-                    TFIDF, null, 10, 0, 0, "Topics", field2analyzer, "Text");
+            //BM25Similarity BM25 = new BM25Similarity();
+            //Map<String, Analyzer> field2analyzer = new HashMap<>();
+            //field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer(RanksNL.stopWords));
+            
+            //GumbelCopulaClassifierTF gcc = new GumbelCopulaClassifierTF(reader, analyzer, null, "Topics", cooccur, "Text");
+            GumbelCopulaClassifierTFIDF gcc = new GumbelCopulaClassifierTFIDF(reader, analyzer, null, "Topics", cooccur, "Text");
             //#######Read Index and Train#########
             
-            
-            /*
-            //###########Get Class List of Training Docs##########
-            Terms classes = MultiFields.getTerms(reader, "Topics");
-            TermsEnum classesEnum = classes.iterator();
-            BytesRef next;
-            System.out.println("Classes : ");
-            while ((next = classesEnum.next()) != null) {
-                if (next.length > 0) {
-                    String term = next.utf8ToString();
-                    System.out.println(term + ",");
-                }
-            }
-            //###########Get Class List of Training Docs##########
-            */
             
             ConfusionMatrix cMatrix = new ConfusionMatrix();
             
@@ -152,7 +124,7 @@ public class KNNClassifyR21578 {
                         System.out.println("Unknown File: " + file.getAbsolutePath());
                         continue;
                     }
-                    ClassificationResult<BytesRef> res = classifyDoc(knn, file.getAbsolutePath());
+                    ClassificationResult<BytesRef> res = classifyDoc(gcc, file.getAbsolutePath());
                     BytesRef resClass = res.getAssignedClass();
                     String predClass = resClass.utf8ToString();
                     //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
@@ -167,16 +139,24 @@ public class KNNClassifyR21578 {
 
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(CopulaClassifyR21578_SingleCore.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     public static void main(String[] args) {
-        KNNClassifyR21578 cl = new KNNClassifyR21578();
-        //cl.performClassification("/Users/sounakbanerjee/Desktop/Temp/index", "");
-        //String testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
+        CopulaClassifyR21578_SingleCore cl = new CopulaClassifyR21578_SingleCore();
+        
+        //MacOS
+        //String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/RCV1";
+        //String testData = "/Volumes/Files/Current/Drive/Work/Experiment/RCV1/Test";
+        //Path termPairIndex = Paths.get("/Users/sounakbanerjee/Desktop/Temp/index/RCV1/TermPairs");
+        
+        //Linux
         String testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";
-        //String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index";
-        String trainIndex = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
-        cl.performClassification(trainIndex, testData);
+        String indexLoc = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
+        Path termPairIndex = Paths.get("/home/sounak/work1/test1");
+        
+        cl.performClassification(indexLoc, testData, termPairIndex);
     }
 }

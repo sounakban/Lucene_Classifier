@@ -7,6 +7,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.apache.lucene.classification.Classifier;
 import org.apache.lucene.classification.ClassificationResult;
@@ -152,7 +158,9 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
         if (classes != null) {
             TermsEnum classesEnum = classes.iterator();
             BytesRef next;
-            HashMap<TermPair, Integer> cooccuringTerms = TermCooccurence.generateCooccurences(inputDocument, this.analyzer);
+            HashMap<String, Integer> sourceTermFreq = new HashMap();
+            HashMap<TermPair, Integer> cooccuringTerms = TermCooccurence.generateCooccurences(inputDocument, sourceTermFreq, this.analyzer);
+            trimFeatures(sourceTermFreq, cooccuringTerms, 25);
             int numDocsWithClass = indexReader.getDocCount(classFieldName);
             while ((next = classesEnum.next()) != null) {
                 if (next.length > 0) {
@@ -169,30 +177,36 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
     }
     
     
-    /**
-     * tokenize a <code>String</code> on this classifier's text fields and analyzer
-     *
-     * temporarily not used
-     *
-     * @param text the <code>String</code> representing an input text (to be classified)
-     * @return a <code>String</code> array of the resulting tokens
-     * @throws IOException if tokenization fails
-     *
-     * protected String[] tokenize(String text) throws IOException {
-     * Collection<String> result = new LinkedList<>();
-     * for (String textFieldName : textFieldNames) {
-     * try (TokenStream tokenStream = analyzer.tokenStream(textFieldName, text)) {
-     * CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
-     * tokenStream.reset();
-     * while (tokenStream.incrementToken()) {
-     * result.add(charTermAttribute.toString());
-     * }
-     * tokenStream.end();
-     * }
-     * }
-     * return result.toArray(new String[result.size()]);
-     * }
-     */
+    private void trimFeatures(HashMap<String, Integer> sourceTermFreq, HashMap<TermPair, Integer> cooccuringTerms, int k) {
+        
+        //Sort in descending order
+        Map<String, Integer> sortedMap =
+                sourceTermFreq.entrySet().stream()
+                        .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                                (e1, e2) -> e2, LinkedHashMap::new));
+        
+        //Pick out k highest freq words
+        sourceTermFreq.clear();
+        int count = 0;
+        for (Map.Entry<String, Integer> ent : sortedMap.entrySet()) {
+            if (count++ >= k)
+                break;
+            sourceTermFreq.put(ent.getKey(), ent.getValue());
+        }
+        
+        
+        //Filter out term pairs
+        HashMap<TermPair, Integer> filteredCooccurences = new HashMap();
+        Iterator it = cooccuringTerms.entrySet().iterator();
+        while (it.hasNext()) {
+            HashMap.Entry pair = (HashMap.Entry)it.next();
+            TermPair tp = (TermPair)pair.getKey();
+            if (sourceTermFreq.get(tp.getTerm1()) != null && sourceTermFreq.get(tp.getTerm2()) != null)
+                filteredCooccurences.put(tp, (Integer)pair.getValue());
+        }
+        cooccuringTerms = filteredCooccurences;
+    }
     
     
     private double getPrior(Term term, int docsWithClassSize) throws IOException {
@@ -211,7 +225,9 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
         HashMap<TermPair, Double> corCoeffList = new HashMap();
                 
         // classVocabulary : calculate the total dictionary size (with freq) in documents of class c (+|V|)
-        double classVocabulary = getIndexTermFreqForClass(term, wordFreq) + docsWithClass;
+        double classVocabulary = getIndexTermFreqForClass(term, wordFreq);// + docsWithClass;
+        //double classVocabulary = getIndexTermFreqForClass(term, wordFreq, cooccuringTerms);// + docsWithClass;
+        
         //System.out.println("All classes : " + Arrays.toString(cooccurenceTrainData.getClassList()));
         //System.out.println("Current class : " + currClass + "\tFreq : " + cooccurenceTrainData.getClassFreqSum(currClass));
         double classtpVocabulary = (double) cooccurenceTrainData.getClassFreqSum(currClass).intValue();
@@ -223,7 +239,7 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
             String word2 = tp.getTerm2();
             Double word1Freq = wordFreq.get(word1);
             Double word2Freq = wordFreq.get(word2);
-            if (word1Freq != null && word2Freq != null && tpTrainFreq != null) {
+            if (word1Freq != null && word2Freq != null && word1Freq != 0 && word2Freq != 0 && tpTrainFreq != null) {
                 
                 // count the no of times the word appears in documents of class c (+1 for laplace smoothing)
                 // P(w|c) = num/totFreq
@@ -245,12 +261,12 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
                 Double tpProbability = tpTrainFreq / classtpVocabulary;
                 
                 //Jaccard(t1,t2) = (t1 intersection t2) /(t1 union t2)
-                double jaccardCoeff = tpTrainFreq / (word1Freq + word2Freq - tpTrainFreq);
-                corCoeffList.put(tp, jaccardCoeff);
+                //double Coeff = tpTrainFreq / (word1Freq + word2Freq - tpTrainFreq);
                 
                 //PMI(t1,t2) = (P(t1)*P(t2)) /P(t1 union t2)
-                //double PMICoeff = tpProbability / (word1Weight + word2Weight - tpProbability);
-                //corCoeffList.put(tp, PMICoeff);
+                double Coeff = Math.log( tpProbability / (word1Weight * word2Weight) );
+                
+                corCoeffList.put(tp, Coeff);
             }
         });
         
@@ -277,32 +293,8 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
                 result += temp;
         }
         
+        //System.out.println("result : " + result);
         return result;
-    }
-    
-    private void normalizeCorelationCoefficients(HashMap<TermPair, Double> corCoeffList) {
-        double meanCorCoeff = 0;
-        
-        for (HashMap.Entry<TermPair, Double> entry : corCoeffList.entrySet()) {
-            meanCorCoeff += entry.getValue();
-        }
-        meanCorCoeff /= corCoeffList.size();
-        
-        for (HashMap.Entry<TermPair, Double> entry : corCoeffList.entrySet()) {
-            double corCoeff = entry.getValue();
-            if (corCoeff < meanCorCoeff)
-                entry.setValue(1d);
-            else
-                entry.setValue(corCoeff / meanCorCoeff);
-        }
-    }
-    
-    private double gumbelPhi (double termWeight, double corCoeff) {
-        return Math.pow(-Math.log(termWeight), corCoeff);
-    }
-    
-    private double gumbelInversePhi (double termWeight, double corCoeff) {
-        return Math.exp(-Math.pow(termWeight, 1/corCoeff));
     }
     
     
@@ -354,6 +346,85 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
     
     
     /**
+     * Returns the average number of unique terms times the number of docs belonging to the input class
+     * @param term the term representing the class
+     * @return the average number of unique terms
+     * @throws IOException if a low level I/O problem happens
+     */
+    private double getIndexTermFreqForClass(Term term, HashMap<String, Double> uniqueTerms, HashMap<TermPair, Integer> cooccuringTerms) throws IOException {
+        double totalSize = 0;
+        BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+        booleanQuery.add(new BooleanClause(new TermQuery(term), BooleanClause.Occur.MUST));
+        
+        for (Map.Entry<TermPair, Integer> ent : cooccuringTerms.entrySet()) {
+            BooleanQuery.Builder subQuery;
+            TopDocs wordDocs;
+            TermPair tp = ent.getKey();
+            String word1 = tp.getTerm1();
+            String word2 = tp.getTerm2();
+            
+            
+            if(uniqueTerms.get(word1)==null) {
+                subQuery = new BooleanQuery.Builder();
+                subQuery.add(new BooleanClause(booleanQuery.build(), BooleanClause.Occur.MUST));
+                for (String textFieldName : textFieldNames)
+                    subQuery.add(new BooleanClause(new TermQuery(new Term(textFieldName, word1)), BooleanClause.Occur.MUST));
+                wordDocs = indexSearcher.search(subQuery.build(), indexReader.numDocs());
+                Double freq = (double)wordDocs.totalHits;
+                uniqueTerms.put(word1, freq);
+                totalSize += freq;
+            }
+            
+            
+            if(uniqueTerms.get(word1)==null) {
+                subQuery = new BooleanQuery.Builder();
+                subQuery.add(new BooleanClause(booleanQuery.build(), BooleanClause.Occur.MUST));
+                for (String textFieldName : textFieldNames)
+                    subQuery.add(new BooleanClause(new TermQuery(new Term(textFieldName, word2)), BooleanClause.Occur.MUST));
+                wordDocs = indexSearcher.search(subQuery.build(), indexReader.numDocs());
+                Double freq = (double)wordDocs.totalHits;
+                uniqueTerms.put(word1, freq);
+                totalSize += freq;
+            }
+            
+        }
+        return totalSize;
+        //return (double)uniqueTerms.size() ; // number of unique terms in text fields of all docs of class c
+    }
+    
+    
+    
+    
+    private void normalizeCorelationCoefficients(HashMap<TermPair, Double> corCoeffList) {
+        double meanCorCoeff = 0;
+        
+        for (HashMap.Entry<TermPair, Double> entry : corCoeffList.entrySet()) {
+            meanCorCoeff += entry.getValue();
+        }
+        meanCorCoeff /= corCoeffList.size();
+        
+        for (HashMap.Entry<TermPair, Double> entry : corCoeffList.entrySet()) {
+            double corCoeff = entry.getValue();
+            if (corCoeff < meanCorCoeff)
+                entry.setValue(1d);
+            else
+                entry.setValue(corCoeff / meanCorCoeff);
+        }
+    }
+    
+    private double gumbelPhi (double termWeight, double corCoeff) {
+        return Math.pow(-Math.log(termWeight), corCoeff);
+    }
+    
+    private double gumbelInversePhi (double termWeight, double corCoeff) {
+        return Math.exp(-Math.pow(termWeight, 1/corCoeff));
+    }
+    
+    
+    
+    
+    
+    /**
      * Normalize the classification results based on the max score available
      * @param assignedClasses the list of assigned classes
      * @return the normalized results
@@ -383,3 +454,33 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
     }
     
 }
+
+
+
+
+    
+    
+    /**
+     * tokenize a <code>String</code> on this classifier's text fields and analyzer
+     *
+     * temporarily not used
+     *
+     * @param text the <code>String</code> representing an input text (to be classified)
+     * @return a <code>String</code> array of the resulting tokens
+     * @throws IOException if tokenization fails
+     *
+     * protected String[] tokenize(String text) throws IOException {
+     * Collection<String> result = new LinkedList<>();
+     * for (String textFieldName : textFieldNames) {
+     * try (TokenStream tokenStream = analyzer.tokenStream(textFieldName, text)) {
+     * CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+     * tokenStream.reset();
+     * while (tokenStream.incrementToken()) {
+     * result.add(charTermAttribute.toString());
+     * }
+     * tokenStream.end();
+     * }
+     * }
+     * return result.toArray(new String[result.size()]);
+     * }
+     */

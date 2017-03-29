@@ -184,9 +184,17 @@ public class NaiveBayesClassifyRCV1 {
             //########Iterate through Test Docs : Classify##########
             File testFolder = new File(testData);
             File[] listOfFolders = testFolder.listFiles();
-            for (File folder : listOfFolders) {
-                File classFolder = new File(folder.getAbsolutePath());
-                File[] listOfFiles = classFolder.listFiles();
+            if (listOfFolders == null){
+                System.out.println("Empty directory!!!");
+                return;
+            }
+            for (File subFolder : listOfFolders) {
+                File currFolder = new File(subFolder.getAbsolutePath());
+                File[] listOfFiles = currFolder.listFiles();
+                if (listOfFiles == null){
+                    System.out.println("Empty directory: " + subFolder.getAbsolutePath());
+                    continue;
+                }
                 for (File file : listOfFiles) {
                     if (file.getName().contains("\\.")) {
                         System.out.println("Unknown File: " + file.getAbsolutePath());
@@ -230,7 +238,7 @@ public class NaiveBayesClassifyRCV1 {
             double FSum = 0;
             for (String Class : allClassList.split(",")) {
                 cMatrix = cMatrices.get(Class);
-                //System.out.println("Class : " + Class + "\tF-Measure: " + cMatrix.getMacroFMeasure());
+                System.out.println("Class : " + Class + "\tF-Measure: " + cMatrix.getMacroFMeasure());
                 FSum += cMatrix.getMacroFMeasure();
                 //System.out.println("Precision: " + cMatrix.getAvgPrecision());
                 //System.out.println("Recall: " + cMatrix.getAvgRecall());
@@ -246,10 +254,15 @@ public class NaiveBayesClassifyRCV1 {
 
     public static void main(String[] args) {
         NaiveBayesClassifyRCV1 cl = new NaiveBayesClassifyRCV1();
-        //String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index";
-        String trainIndex = "/home/sounak/work/expesriment Byproducts/index/RCV1";
-        //String testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
-        String testData = "/home/sounak/work/Datasets/RCVsubsetTest";
+        
+        //MacOS
+        String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/RCV1";
+        String testData = "/Volumes/Files/Current/Drive/Work/Experiment/RCV1/Test";
+        
+        //Linux
+        //String trainIndex = "/home/sounak/work/expesriment Byproducts/index/RCV1";
+        //String testData = "/home/sounak/work/Datasets/RCVsubsetTest";
+        
         cl.performClassification(trainIndex, testData);
     }
 }

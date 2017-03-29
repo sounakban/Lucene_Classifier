@@ -2,7 +2,6 @@ package Reuters21578;
 
 
 //For Classification
-import CommonResources.ConfusionMatrix;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -11,7 +10,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.DirectoryReader;
 import CopulaResources.*;
-import CopulaResources.TermCooccurence;
 
 
 import org.apache.lucene.document.Document;
@@ -27,9 +25,6 @@ import java.io.File;
 import CommonResources.RanksNL;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -39,6 +34,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.MultiFields;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
+import com.aliasi.classify.ConfusionMatrix;
 
 
 
@@ -49,21 +48,22 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 
 
-public class CopulaClassifyR215781MulCore {
+public class CopulaClassifyR215781 {
     
     private static class classifyDoc implements Callable{
         
         private ClassificationResult<BytesRef> res=null;
         String path;
-        GumbelCopulaClassifierTFIDF classifier;
-        //GumbelCopulaClassifierTF classifier;
+        //GumbelCopulaClassifierTFIDF classifier;
+        GumbelCopulaClassifierTF classifier;
 
-        //public classifyDoc(GumbelCopulaClassifierTF gcc, String path) {
-        public classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
+        public classifyDoc(GumbelCopulaClassifierTF gcc, String path) {
+        //public classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
             this.path = path;
             this.classifier = gcc;
         }
         
+        @Override
         public ClassificationResult<BytesRef> call() {
             try {
                 
@@ -107,7 +107,7 @@ public class CopulaClassifyR215781MulCore {
     
     
     
-    void performClassification(String indexLoc, String testData) {
+    void performClassification(String indexLoc, String testData, Path termPairIndex) {
         try {
             
             //#######Read Index and Train#########
@@ -117,9 +117,8 @@ public class CopulaClassifyR215781MulCore {
             
             
             //Term-Pair
-            //TermCooccurence cooccur = TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 2, 10);
-            Path termPairIndex = Paths.get("/home/sounak/work1/test1");
-            TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 8, 50, termPairIndex);
+            //TermCooccurence cooccur = TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 0, 0);
+            //TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 0, 0, termPairIndex);
             TermCooccurence cooccur = new TermCooccurence(termPairIndex);
             
 
@@ -127,21 +126,34 @@ public class CopulaClassifyR215781MulCore {
             //Map<String, Analyzer> field2analyzer = new HashMap<>();
             //field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer(RanksNL.stopWords));
             
-            //GumbelCopulaClassifierTF gcc = new GumbelCopulaClassifierTF(reader, analyzer, null, "Topics", cooccur, "Text");
-            GumbelCopulaClassifierTFIDF gcc = new GumbelCopulaClassifierTFIDF(reader, analyzer, null, "Topics", cooccur, "Text");
+            GumbelCopulaClassifierTF gcc = new GumbelCopulaClassifierTF(reader, analyzer, null, "Topics", cooccur, "Text");
+            //GumbelCopulaClassifierTFIDF gcc = new GumbelCopulaClassifierTFIDF(reader, analyzer, null, "Topics", cooccur, "Text");
             //#######Read Index and Train#########
             
+           //###########Get Class List of Training Docs##########
+            Terms classes = MultiFields.getTerms(reader, "Topics");
+            TermsEnum classesEnum = classes.iterator();
+            BytesRef next;
+            String allClassList = "";
+            while ((next = classesEnum.next()) != null) {
+                if (next.length > 0) {
+                    allClassList = allClassList + next.utf8ToString() + ",";
+                }
+            }
+            //System.out.println("Classes : " + allClassList);
+            //###########Get Class List of Training Docs##########
             
-            ConfusionMatrix cMatrix = new ConfusionMatrix();
+            
+            ConfusionMatrix cMatrix = new ConfusionMatrix(allClassList.split(","));
             
             //Multicore Processing
             int availThreads = Runtime.getRuntime().availableProcessors();
             if (availThreads>4)
                 availThreads -= 2;
             System.out.println("Number of Threads used : " + availThreads);
-            ExecutorService pool = Executors.newFixedThreadPool(availThreads); 
+            ExecutorService pool = Executors.newFixedThreadPool(availThreads);  //Set max simultanious threads
             
-            //########Iterate through Test Docs : Classify & Report##########                    //Set max simultanious threads
+            //########Iterate through Test Docs : Classify & Report##########                    
             HashMap<String, Future<ClassificationResult<BytesRef>>> hsMap = new HashMap();
             File testFolder = new File(testData);
             File[] listOfFolders = testFolder.listFiles();
@@ -170,11 +182,12 @@ public class CopulaClassifyR215781MulCore {
                 BytesRef resClass = res.getAssignedClass();
                 String predClass = resClass.utf8ToString();
                 //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
-                cMatrix.increaseValue(originalClass, predClass);
+                cMatrix.increment(originalClass, predClass);
             }
-            System.out.println("F-Measure: " + cMatrix.getMacroFMeasure());
-            System.out.println("Precision: " + cMatrix.getAvgPrecision());
-            System.out.println("Recall: " + cMatrix.getAvgRecall());
+            System.out.println("Micro F-Measure: " + cMatrix.microAverage().fMeasure());
+            System.out.println("Macro F-Measure: " + cMatrix.macroAvgFMeasure());
+            //System.out.println("Precision: " + cMatrix.);
+            //System.out.println("Recall: " + cMatrix.);
             
             //########Iterate through Test Docs : Classify & Report##########
             
@@ -188,16 +201,24 @@ public class CopulaClassifyR215781MulCore {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException | InterruptedException | ExecutionException ex) {
-            Logger.getLogger(CopulaClassifyR215781MulCore.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CopulaClassifyR215781.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     public static void main(String[] args) {
-        CopulaClassifyR215781MulCore cl = new CopulaClassifyR215781MulCore();
-        //testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
-        //String indexLoc = "/Users/sounakbanerjee/Desktop/Temp/index";
-        String testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";
-        String indexLoc = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
-        cl.performClassification(indexLoc, testData);
+        CopulaClassifyR215781 cl = new CopulaClassifyR215781();
+        
+        //Mac Paths
+        String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/R21578";
+        String testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/test";
+        Path termPairIndex = Paths.get("/Users/sounakbanerjee/Desktop/Temp/index/R21578/TermPairs");
+        
+        
+        //Linux Paths
+        //String testData = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/test";
+        //String indexLoc = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
+        //Path termPairIndex = Paths.get("/home/sounak/work1/test1");
+        
+        cl.performClassification(trainIndex, testData, termPairIndex);
     }
 }

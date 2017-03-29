@@ -6,10 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.lucene.classification.Classifier;
 import org.apache.lucene.classification.ClassificationResult;
@@ -38,7 +34,7 @@ import org.apache.lucene.search.TopDocs;
 
 
 
-public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
+public class GumbelCopulaClassifierTFIDF1Old implements Classifier<BytesRef>{
     
     /**
      * {@link org.apache.lucene.index.IndexReader} used to access the {@link org.apache.lucene.classification.Classifier}'s
@@ -89,7 +85,7 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
      */
     
     
-    public GumbelCopulaClassifierTFIDF(IndexReader indexReader, Analyzer analyzer, Query query, String classFieldName, TermCooccurence cooccurenceTrainData, String... textFieldNames) {
+    public GumbelCopulaClassifierTFIDF1Old(IndexReader indexReader, Analyzer analyzer, Query query, String classFieldName, TermCooccurence cooccurenceTrainData, String... textFieldNames) {
         this.indexReader = indexReader;
         this.indexSearcher = new IndexSearcher(this.indexReader);
         this.textFieldNames = textFieldNames;
@@ -153,7 +149,6 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
             BytesRef next;
             HashMap<String, Integer> sourceTermFreq = new HashMap();
             HashMap<TermPair, Integer> cooccuringTerms = TermCooccurence.generateCooccurences(inputDocument, sourceTermFreq, this.analyzer);
-            trimFeatures(sourceTermFreq, cooccuringTerms, 25);
             int numDocsWithClass = indexReader.getDocCount(classFieldName);
             while ((next = classesEnum.next()) != null) {
                 if (next.length > 0) {
@@ -161,7 +156,7 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
                     double prior = Math.log(getPrior(term, numDocsWithClass));
                     double logLikelihood = getLogLikelihood(cooccuringTerms, term);        
                     Double clVal = prior + logLikelihood;
-                    System.out.println("Class : " + next.utf8ToString() + "\tScore : " + clVal + "\tPrior : " + prior + "\tLikelihood : " + logLikelihood);
+                    //System.out.println("Class : " + next.utf8ToString() + "\tScore : " + clVal + "\tPrior : " + prior + "\tLikelihood : " + logLikelihood);
                     assignedClasses.add(new ClassificationResult<>(term.bytes(), -clVal));
                 }
             }
@@ -173,38 +168,30 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
     }
     
     
-    private void trimFeatures(HashMap<String, Integer> sourceTermFreq, HashMap<TermPair, Integer> cooccuringTerms, int size) {
-        
-        //Sort in descending order
-        Map<String, Integer> sortedMap =
-                sourceTermFreq.entrySet().stream()
-                        .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                                (e1, e2) -> e2, LinkedHashMap::new));
-        
-        //Pick out k highest freq words
-        sourceTermFreq.clear();
-        int count = 0;
-        for (Map.Entry<String, Integer> ent : sortedMap.entrySet()) {
-            if (count++ >= size)
-                break;
-            sourceTermFreq.put(ent.getKey(), ent.getValue());
-        }
-        
-        
-        //Filter out term pairs
-        HashMap<TermPair, Integer> filteredCooccurences = new HashMap();
-        Iterator it = cooccuringTerms.entrySet().iterator();
-        while (it.hasNext()) {
-            HashMap.Entry pair = (HashMap.Entry)it.next();
-            TermPair tp = (TermPair)pair.getKey();
-            if (sourceTermFreq.get(tp.getTerm1()) != null && sourceTermFreq.get(tp.getTerm2()) != null)
-                filteredCooccurences.put(tp, (Integer)pair.getValue());
-        }
-        cooccuringTerms = filteredCooccurences;
-    }
-    
-    
+    /**
+     * tokenize a <code>String</code> on this classifier's text fields and analyzer
+     *
+     * temporarily not used
+     *
+     * @param text the <code>String</code> representing an input text (to be classified)
+     * @return a <code>String</code> array of the resulting tokens
+     * @throws IOException if tokenization fails
+     *
+     * protected String[] tokenize(String text) throws IOException {
+     * Collection<String> result = new LinkedList<>();
+     * for (String textFieldName : textFieldNames) {
+     * try (TokenStream tokenStream = analyzer.tokenStream(textFieldName, text)) {
+     * CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+     * tokenStream.reset();
+     * while (tokenStream.incrementToken()) {
+     * result.add(charTermAttribute.toString());
+     * }
+     * tokenStream.end();
+     * }
+     * }
+     * return result.toArray(new String[result.size()]);
+     * }
+     */
     
     
     private double getPrior(Term term, int docsWithClassSize) throws IOException {
@@ -451,35 +438,3 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
     }
     
 }
-
-
-
-
-
-
-
-
-    /**
-     * tokenize a <code>String</code> on this classifier's text fields and analyzer
-     *
-     * temporarily not used
-     *
-     * @param text the <code>String</code> representing an input text (to be classified)
-     * @return a <code>String</code> array of the resulting tokens
-     * @throws IOException if tokenization fails
-     *
-     * protected String[] tokenize(String text) throws IOException {
-     * Collection<String> result = new LinkedList<>();
-     * for (String textFieldName : textFieldNames) {
-     * try (TokenStream tokenStream = analyzer.tokenStream(textFieldName, text)) {
-     * CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
-     * tokenStream.reset();
-     * while (tokenStream.incrementToken()) {
-     * result.add(charTermAttribute.toString());
-     * }
-     * tokenStream.end();
-     * }
-     * }
-     * return result.toArray(new String[result.size()]);
-     * }
-     */

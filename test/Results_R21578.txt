@@ -131,3 +131,89 @@ F-Measure: 0.5163064809041399
 Precision: 0.5518661399325167
 Recall: 0.5345272811024475
 BUILD SUCCESSFUL (total time: 21 minutes 13 seconds)
+
+
+
+################################# MODIFIED ALGOS #####################################
+
+
+A Co-Occurence List already exists : attempting to overwrite. [Min freq : 0, Max freq : 0] 
+
+TF-PMI :
+Micro F-Measure: 0.7746681019016864
+Macro F-Measure: NaN
+BUILD SUCCESSFUL (total time: 12 minutes 19 seconds)
+
+
+TF-Jaccard :
+Micro F-Measure: 0.5611768927161823
+Macro F-Measure: 0.44112043626588904
+BUILD SUCCESSFUL (total time: 12 minutes 40 seconds)
+
+
+TF_RevIDF-Jaccard :
+Micro F-Measure: 0.5611768927161823
+Macro F-Measure: 0.44112043626588904
+BUILD SUCCESSFUL (total time: 11 minutes 30 seconds)
+
+
+TF_RevIDF-PMI :
+Micro F-Measure: 0.5852170792967348
+Macro F-Measure: 0.37189407316043693
+BUILD SUCCESSFUL (total time: 12 minutes 0 seconds)
+
+
+TF_IDF-Jaccard :
+Micro F-Measure: 0.5611768927161823
+Macro F-Measure: 0.44112043626588904
+BUILD SUCCESSFUL (total time: 16 minutes 45 seconds)
+
+
+TF_IDF-PMI :
+Micro F-Measure: 0.5852170792967348
+Macro F-Measure: 0.37189407316043693
+BUILD SUCCESSFUL (total time: 11 minutes 42 seconds)
+
+
+
+
+
+A Co-Occurence List already exists : attempting to overwrite.[Min freq : 5, Max freq : 50] 
+
+
+
+TF-PMI :
+Micro F-Measure: 0.7176175098672407
+Macro F-Measure: NaN
+BUILD SUCCESSFUL (total time: 9 minutes 38 seconds)
+
+
+TF-Jaccard :
+Micro F-Measure: 0.7151058485827054
+Macro F-Measure: NaN
+BUILD SUCCESSFUL (total time: 9 minutes 46 seconds)
+
+
+
+TF_RevIDF-PMI :
+Micro F-Measure: 0.6340150699677072
+Macro F-Measure: 0.3731526414779295
+BUILD SUCCESSFUL (total time: 9 minutes 1 second)
+
+
+TF_RevIDF-Jaccard :
+Micro F-Measure: 0.7534983853606027
+Macro F-Measure: 0.5282173461118622
+BUILD SUCCESSFUL (total time: 9 minutes 49 seconds)
+
+
+TF_IDF-PMI :
+Micro F-Measure: 0.6340150699677072
+Macro F-Measure: 0.3731526414779295
+BUILD SUCCESSFUL (total time: 10 minutes 24 seconds)
+
+
+TF_IDF-Jaccard :
+Micro F-Measure: 0.7534983853606027
+Macro F-Measure: 0.5282173461118622
+BUILD SUCCESSFUL (total time: 9 minutes 25 seconds)

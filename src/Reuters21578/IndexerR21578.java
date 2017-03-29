@@ -115,12 +115,12 @@ public class IndexerR21578 {
         IndexerR21578 ind = new IndexerR21578();
         
         //For Mac
-        //String corpusFolder = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
-        //String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index";
+        String corpusFolder = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/training";
+        String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index";
         
         //For Linux
-        String indexDirectoryName = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
-        String corpusFolder = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/training";
+        //String indexDirectoryName = "/home/sounak/work/expesriment Byproducts/index/reuters21578";
+        //String corpusFolder = "/home/sounak/work/Datasets/Reuters21578-Apte-top10/training";
         
         ind.CreateIndex(indexDirectoryName, corpusFolder);
     }
