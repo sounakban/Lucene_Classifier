@@ -50,7 +50,7 @@ import org.apache.lucene.index.MultiFields;
  */
 
 
-public class NaiveBayesClassifyR215781 {
+public class NaiveBayesClassifyR21578 {
 
     ClassificationResult<BytesRef> classifyDoc(SimpleNaiveBayesDocumentClassifier snb, String path) {
 
@@ -161,6 +161,7 @@ public class NaiveBayesClassifyR215781 {
                     cMatrix.increment(originalClass, predClass);
                 }
             }
+            System.out.println("Reuters21578.NaiveBayesClassifyR215781");
             System.out.println("Micro F-Measure: " + cMatrix.microAverage().fMeasure());
             System.out.println("Macro F-Measure: " + cMatrix.macroAvgFMeasure());
             //System.out.println("Precision: " + cMatrix.);
@@ -174,7 +175,7 @@ public class NaiveBayesClassifyR215781 {
     }
 
     public static void main(String[] args) {
-        NaiveBayesClassifyR215781 cl = new NaiveBayesClassifyR215781();
+        NaiveBayesClassifyR21578 cl = new NaiveBayesClassifyR21578();
         
         //MacOS
         String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/R21578";

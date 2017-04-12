@@ -48,7 +48,7 @@ import com.aliasi.classify.ConfusionMatrix;
 
 
 
-public class CopulaClassifyR215781 {
+public class CopulaClassifyR21578 {
     
     private static class classifyDoc implements Callable{
         
@@ -117,14 +117,12 @@ public class CopulaClassifyR215781 {
             
             
             //Term-Pair
-            //TermCooccurence cooccur = TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 0, 0);
             //TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 0, 0, termPairIndex);
+            System.out.println("Importing Term Pairs");
+            //TermCooccurence cooccur = TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 0, 0);
             TermCooccurence cooccur = new TermCooccurence(termPairIndex);
+            System.out.println("Import Complete");
             
-
-            //BM25Similarity BM25 = new BM25Similarity();
-            //Map<String, Analyzer> field2analyzer = new HashMap<>();
-            //field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer(RanksNL.stopWords));
             
             GumbelCopulaClassifierTF gcc = new GumbelCopulaClassifierTF(reader, analyzer, null, "Topics", cooccur, "Text");
             //GumbelCopulaClassifierTFIDF gcc = new GumbelCopulaClassifierTFIDF(reader, analyzer, null, "Topics", cooccur, "Text");
@@ -184,6 +182,7 @@ public class CopulaClassifyR215781 {
                 //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
                 cMatrix.increment(originalClass, predClass);
             }
+            System.out.println("Reuters21578.CopulaClassifyR215781");
             System.out.println("Micro F-Measure: " + cMatrix.microAverage().fMeasure());
             System.out.println("Macro F-Measure: " + cMatrix.macroAvgFMeasure());
             //System.out.println("Precision: " + cMatrix.);
@@ -201,16 +200,16 @@ public class CopulaClassifyR215781 {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException | InterruptedException | ExecutionException ex) {
-            Logger.getLogger(CopulaClassifyR215781.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CopulaClassifyR21578.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     public static void main(String[] args) {
-        CopulaClassifyR215781 cl = new CopulaClassifyR215781();
+        CopulaClassifyR21578 cl = new CopulaClassifyR21578();
         
         //Mac Paths
         String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/R21578";
-        String testData = "/Volumes/Files/Current/Drive/Work/Experiment/Reuters21578-Apte-top10/test";
+        String testData = "/Volumes/Files/Work/Research/Information Retrieval/1) Data/Reuters/Reuters21578-Apte-top10/Reuters21578-Apte-top10/test";
         Path termPairIndex = Paths.get("/Users/sounakbanerjee/Desktop/Temp/index/R21578/TermPairs");
         
         

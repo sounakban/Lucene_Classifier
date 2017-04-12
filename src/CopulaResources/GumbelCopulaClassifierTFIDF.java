@@ -161,7 +161,7 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
                     double prior = Math.log(getPrior(term, numDocsWithClass));
                     double logLikelihood = getLogLikelihood(cooccuringTerms, term);        
                     Double clVal = prior + logLikelihood;
-                    System.out.println("Class : " + next.utf8ToString() + "\tScore : " + clVal + "\tPrior : " + prior + "\tLikelihood : " + logLikelihood);
+                    //System.out.println("Class : " + next.utf8ToString() + "\tScore : " + clVal + "\tPrior : " + prior + "\tLikelihood : " + logLikelihood);
                     assignedClasses.add(new ClassificationResult<>(term.bytes(), -clVal));
                 }
             }
@@ -240,39 +240,34 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
             //System.out.println(word1 + " : " + word1Freq + " ;;; " + word2 + " : " + word2Freq);
             if (word1Freq != null && word1Freq != 0 && word2Freq != null && word2Freq != 0 && tpTrainFreq != null && tpTrainFreq != 0) {
                 
-                Double word1TF = 0d; Double word2TF = 0d;
+                Double word1TF = (Double) (word1Freq + 1) / classVocabulary;
+                Double word2TF = (Double) (word2Freq + 1) / classVocabulary;
                 
-                // count the no of times the word appears in documents of class c (+1 for laplace smoothing)
-                // P(w|c) = num/totFreq
                 Double word1Weight = wordWeight.get(word1);
                 if (word1Weight == null) {
-                    //tf
-                    //System.out.println(wordFreq.get(word1));
-                    word1TF = (Double) (wordFreq.get(word1) + 1) / classVocabulary;
                     //idf
                     Double word1IDF = Math.log((1 + numofDocsinClass) / (1 + worddocFreq.get(word1)));
                     Double word1RevIDF = -Math.log((1 + worddocFreq.get(word1)) / (1 + numofDocsinClass));
                     
-                    word1Weight = word1TF * word1RevIDF;
-                    //System.out.println(numofDocsinClass + " : " + worddocFreq.get(word1));
-                    //System.out.println(word1TF + " : " + word1IDF);
-                    
+                    word1Weight = word1TF * word1IDF;                   
                     wordWeight.put(word1, word1Weight);
+                    
+                    /*
+                    System.out.println(classVocabulary + " : " + word1Freq);
+                    System.out.println(numofDocsinClass + " : " + worddocFreq.get(word1));
+                    System.out.println(word1TF + " : " + word1IDF + "\n-----------");
+                    */
+                    
                 }
                 Double word2Weight = wordWeight.get(word2);
                 if (word2Weight == null) {
-                    //tf
-                    //System.out.println(wordFreq.get(word2));
-                    word2TF = (Double) (wordFreq.get(word2) + 1) / classVocabulary;
                     //idf
                     Double word2IDF = Math.log((1 + numofDocsinClass) / (1 + worddocFreq.get(word2)));
                     Double word2RevIDF = -Math.log((1 + worddocFreq.get(word2)) / (1 + numofDocsinClass));
                     
-                    word2Weight = word2TF * word2RevIDF;
-                    
+                    word2Weight = word2TF * word2IDF;
                     wordWeight.put(word2, word2Weight);
                 }
-                
                 Double tpProbability = tpTrainFreq / classtpVocabulary;
                 
                 //Jaccard(t1,t2) = (t1 intersection t2) /(t1 union t2)
@@ -282,7 +277,9 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
                 double Coeff = Math.log( tpProbability / (word1TF * word2TF) );
                 
                 corCoeffList.put(tp, Coeff);
-                //System.out.println(Coeff);
+                
+                
+                //System.out.println(word1TF + " : " + word2TF + " : " + tpProbability + " : " + Coeff);
             }
         });
         
@@ -292,6 +289,7 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
         //Calculate actual Likelihood C(u1,u2,theta) = exp( (( log(u1))^theta + ( log(u2))^theta)^(1/theta) )
         ArrayList<Double> termPairCopulaValueList = new ArrayList();
         for (HashMap.Entry<TermPair, Double> entry : corCoeffList.entrySet()) {
+            
             TermPair tp = entry.getKey();
             double theta = entry.getValue();
             String word1 = tp.getTerm1();
@@ -299,9 +297,14 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
             String word2 = tp.getTerm2();
             Double word2Weight = wordWeight.get(word2);
             
-            //System.out.println(word1Weight + " : " + word2Weight + " : " + theta);
             double termPairCopulaValue = gumbelInversePhi(gumbelPhi(word1Weight, theta) + gumbelPhi(word2Weight, theta) , theta);
-            termPairCopulaValueList.add(termPairCopulaValue);
+            if (termPairCopulaValue == 0)
+                termPairCopulaValueList.add(Double.MIN_VALUE);
+            else
+                termPairCopulaValueList.add(termPairCopulaValue);
+            
+            
+            //System.out.println(word1Weight + " : " + word2Weight + " : " + theta + " : " + termPairCopulaValue);
         }
         
         for (double val : termPairCopulaValueList) {
@@ -353,6 +356,10 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
     private double getIndexTermFreqForClass(HashMap<TermPair, Integer> cooccuringTerms, Term term, 
             HashMap<String, Double> uniqueTerms, HashMap<String, Double> worddocFreq, double[] numofDocsinClass) throws IOException {
         
+        double totalSize = 0;
+        BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+        booleanQuery.add(new BooleanClause(new TermQuery(term), BooleanClause.Occur.MUST));
+        TopDocs topDocs;
         cooccuringTerms.forEach((tp, tpdocfreq) -> {
             String word1 = tp.getTerm1();
             String word2 = tp.getTerm2();
@@ -361,10 +368,6 @@ public class GumbelCopulaClassifierTFIDF implements Classifier<BytesRef>{
             worddocFreq.put(word1, 0d);
             worddocFreq.put(word2, 0d);
         });
-        double totalSize = 0;
-        BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
-        booleanQuery.add(new BooleanClause(new TermQuery(term), BooleanClause.Occur.MUST));
-        TopDocs topDocs;
         topDocs = indexSearcher.search(booleanQuery.build(), indexReader.numDocs());
         numofDocsinClass[0] = topDocs.totalHits;
         

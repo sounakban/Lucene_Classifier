@@ -51,7 +51,7 @@ import org.apache.lucene.index.MultiFields;
  */
 
 
-public class KNNClassifyR215781 {
+public class KNNClassifyR21578 {
 
     ClassificationResult<BytesRef> classifyDoc(KNearestNeighborDocumentClassifier knn, String path) {
 
@@ -163,6 +163,7 @@ public class KNNClassifyR215781 {
                     cMatrix.increment(originalClass, predClass);
                 }
             }
+            System.out.println("Reuters21578.KNNClassifyR215781");
             System.out.println("Micro F-Measure: " + cMatrix.microAverage().fMeasure());
             System.out.println("Macro F-Measure: " + cMatrix.macroAvgFMeasure());
             //System.out.println("Precision: " + cMatrix.);
@@ -176,7 +177,7 @@ public class KNNClassifyR215781 {
     }
 
     public static void main(String[] args) {
-        KNNClassifyR215781 cl = new KNNClassifyR215781();
+        KNNClassifyR21578 cl = new KNNClassifyR21578();
 
         //MacOS
         String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/R21578";

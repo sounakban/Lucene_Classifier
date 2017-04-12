@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.apache.lucene.classification.Classifier;
@@ -29,10 +27,9 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TotalHitCountCollector;
-import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 
@@ -115,7 +112,7 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
         ClassificationResult<BytesRef> assignedClass = null;
         double maxscore = -Double.MAX_VALUE;
         for (ClassificationResult<BytesRef> c : assignedClasses) {
-                //System.out.println(c.getAssignedClass().utf8ToString() + ":" + c.getScore());
+            //System.out.println(c.getAssignedClass().utf8ToString() + ":" + c.getScore());
             if (c.getScore() > maxscore) {
                 assignedClass = c;
                 maxscore = c.getScore();
@@ -223,10 +220,10 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
         HashMap<String, Double> wordFreq = new HashMap();
         HashMap<String, Double> wordWeight = new HashMap();
         HashMap<TermPair, Double> corCoeffList = new HashMap();
-                
+        
         // classVocabulary : calculate the total dictionary size (with freq) in documents of class c (+|V|)
-        double classVocabulary = getIndexTermFreqForClass(term, wordFreq);// + docsWithClass;
-        //double classVocabulary = getIndexTermFreqForClass(term, wordFreq, cooccuringTerms);// + docsWithClass;
+        double classVocabulary = getIndexTermFreqForClassAccuracy(term, wordFreq);// + docsWithClass;
+        //double classVocabulary = getIndexTermFreqForClassPerformance(term, cooccuringTerms, wordFreq);// + docsWithClass;
         
         //System.out.println("All classes : " + Arrays.toString(cooccurenceTrainData.getClassList()));
         //System.out.println("Current class : " + currClass + "\tFreq : " + cooccurenceTrainData.getClassFreqSum(currClass));
@@ -284,10 +281,14 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
             Double word2Weight = wordWeight.get(word2);
             
             double termPairCopulaValue = gumbelInversePhi(gumbelPhi(word1Weight, theta) + gumbelPhi(word2Weight, theta) , theta);
-            termPairCopulaValueList.add(termPairCopulaValue);
+            if (termPairCopulaValue != 0)
+                termPairCopulaValueList.add(termPairCopulaValue);
+            
+            //System.out.println(word1Weight + " : " + word2Weight + " : " + theta + " : " + termPairCopulaValue);
         }
         
         for (double val : termPairCopulaValueList) {
+            //System.out.println("Val : " + val);
             Double temp = Math.log(val);
             if (!temp.isNaN())
                 result += temp;
@@ -306,7 +307,7 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
      * @throws IOException if a low level I/O problem happens
      */
     
-    private double getIndexTermFreqForClass(Term term, HashMap<String, Double> uniqueTerms) throws IOException {
+    private double getIndexTermFreqForClassAccuracy(Term term, HashMap<String, Double> uniqueTerms) throws IOException {
         double totalSize = 0;
         BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
         booleanQuery.add(new BooleanClause(new TermQuery(term), BooleanClause.Occur.MUST));
@@ -344,54 +345,59 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
     }
     
     
-    
-    /**
-     * Returns the average number of unique terms times the number of docs belonging to the input class
-     * @param term the term representing the class
-     * @return the average number of unique terms
-     * @throws IOException if a low level I/O problem happens
-     */
-    private double getIndexTermFreqForClass(Term term, HashMap<String, Double> uniqueTerms, HashMap<TermPair, Integer> cooccuringTerms) throws IOException {
+    private double getIndexTermFreqForClassPerformance(Term term, HashMap<TermPair, Integer> cooccuringTerms, HashMap<String, Double> uniqueTerms) throws IOException {
+        
         double totalSize = 0;
         BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
         booleanQuery.add(new BooleanClause(new TermQuery(term), BooleanClause.Occur.MUST));
-        
-        for (Map.Entry<TermPair, Integer> ent : cooccuringTerms.entrySet()) {
-            BooleanQuery.Builder subQuery;
-            TopDocs wordDocs;
-            TermPair tp = ent.getKey();
+        TopDocs topDocs;
+        cooccuringTerms.forEach((tp, tpdocfreq) -> {
             String word1 = tp.getTerm1();
             String word2 = tp.getTerm2();
-            
-            
-            if(uniqueTerms.get(word1)==null) {
-                subQuery = new BooleanQuery.Builder();
-                subQuery.add(new BooleanClause(booleanQuery.build(), BooleanClause.Occur.MUST));
-                for (String textFieldName : textFieldNames)
-                    subQuery.add(new BooleanClause(new TermQuery(new Term(textFieldName, word1)), BooleanClause.Occur.MUST));
-                wordDocs = indexSearcher.search(subQuery.build(), indexReader.numDocs());
-                Double freq = (double)wordDocs.totalHits;
-                uniqueTerms.put(word1, freq);
-                totalSize += freq;
+            uniqueTerms.put(word1, 0d);
+            uniqueTerms.put(word2, 0d);
+        });
+        topDocs = indexSearcher.search(booleanQuery.build(), indexReader.numDocs());
+        
+        
+        //Term Frequency
+        for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+            for (String textFieldName : textFieldNames) {
+                Terms termVector;
+                if ((termVector = indexReader.getTermVector(scoreDoc.doc, textFieldName)) == null) {
+                    System.out.println("Skipped [in GumbelCopulaClassifierTFIDF]: " + scoreDoc.doc);
+                    System.out.println("Make sure you indexed term vectors for text fields.");
+                    continue;
+                }
+                
+                TermsEnum itr = termVector.iterator();
+                BytesRef word = null;
+                PostingsEnum postings = null;
+                while((word = itr.next()) != null){
+                    try {
+                        //System.out.println("Word : " + word.utf8ToString());
+                        String termText = word.utf8ToString();
+                        if (uniqueTerms.containsKey(termText)) {
+                            postings = itr.postings(postings, PostingsEnum.FREQS);
+                            postings.nextDoc();
+                            int currFreq = postings.freq();
+                            //System.out.println("Word : " + termText);
+                            //System.out.println("Freq : " + currFreq);
+                            double existingFreq = uniqueTerms.get(termText);
+                            uniqueTerms.put(termText, existingFreq + currFreq);
+                            totalSize += currFreq;
+                        }
+                    } catch(Exception e){
+                        System.out.println(e);
+                    }
+                }
             }
-            
-            
-            if(uniqueTerms.get(word1)==null) {
-                subQuery = new BooleanQuery.Builder();
-                subQuery.add(new BooleanClause(booleanQuery.build(), BooleanClause.Occur.MUST));
-                for (String textFieldName : textFieldNames)
-                    subQuery.add(new BooleanClause(new TermQuery(new Term(textFieldName, word2)), BooleanClause.Occur.MUST));
-                wordDocs = indexSearcher.search(subQuery.build(), indexReader.numDocs());
-                Double freq = (double)wordDocs.totalHits;
-                uniqueTerms.put(word1, freq);
-                totalSize += freq;
-            }
-            
         }
+        
+        
+        //System.out.println(totalSize);
         return totalSize;
-        //return (double)uniqueTerms.size() ; // number of unique terms in text fields of all docs of class c
     }
-    
     
     
     
@@ -458,29 +464,29 @@ public class GumbelCopulaClassifierTF implements Classifier<BytesRef>{
 
 
 
-    
-    
-    /**
-     * tokenize a <code>String</code> on this classifier's text fields and analyzer
-     *
-     * temporarily not used
-     *
-     * @param text the <code>String</code> representing an input text (to be classified)
-     * @return a <code>String</code> array of the resulting tokens
-     * @throws IOException if tokenization fails
-     *
-     * protected String[] tokenize(String text) throws IOException {
-     * Collection<String> result = new LinkedList<>();
-     * for (String textFieldName : textFieldNames) {
-     * try (TokenStream tokenStream = analyzer.tokenStream(textFieldName, text)) {
-     * CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
-     * tokenStream.reset();
-     * while (tokenStream.incrementToken()) {
-     * result.add(charTermAttribute.toString());
-     * }
-     * tokenStream.end();
-     * }
-     * }
-     * return result.toArray(new String[result.size()]);
-     * }
-     */
+
+
+/**
+ * tokenize a <code>String</code> on this classifier's text fields and analyzer
+ *
+ * temporarily not used
+ *
+ * @param text the <code>String</code> representing an input text (to be classified)
+ * @return a <code>String</code> array of the resulting tokens
+ * @throws IOException if tokenization fails
+ *
+ * protected String[] tokenize(String text) throws IOException {
+ * Collection<String> result = new LinkedList<>();
+ * for (String textFieldName : textFieldNames) {
+ * try (TokenStream tokenStream = analyzer.tokenStream(textFieldName, text)) {
+ * CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+ * tokenStream.reset();
+ * while (tokenStream.incrementToken()) {
+ * result.add(charTermAttribute.toString());
+ * }
+ * tokenStream.end();
+ * }
+ * }
+ * return result.toArray(new String[result.size()]);
+ * }
+ */

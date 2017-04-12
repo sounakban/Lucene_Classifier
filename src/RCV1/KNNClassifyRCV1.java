@@ -2,7 +2,6 @@ package RCV1;
 
 
 //For Classification
-import CommonResources.ConfusionMatrix;
 import java.io.IOException;
 import java.nio.file.Paths;
 import org.apache.lucene.store.FSDirectory;
@@ -36,6 +35,7 @@ import org.jdom2.Attribute;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
+import com.aliasi.classify.ConfusionMatrix;
 
 
 //Get list of Training Classes
@@ -129,6 +129,7 @@ public class KNNClassifyRCV1 {
             //#######Read Index and Train#########
             FSDirectory index = FSDirectory.open(Paths.get(indexLoc));
             IndexReader reader = DirectoryReader.open(index);
+            System.out.println("Index : " + reader.getDocCount("Text"));
 
             //Segmented reader
             List<LeafReaderContext> leaves = reader.leaves();
@@ -137,6 +138,14 @@ public class KNNClassifyRCV1 {
             ClassicSimilarity TFIDF = new ClassicSimilarity();
             Map<String, Analyzer> field2analyzer = new HashMap<>();
             field2analyzer.put("Text", new org.apache.lucene.analysis.standard.StandardAnalyzer(RanksNL.stopWords));
+
+            //For single Leaf (Segment in Index)
+            LeafReaderContext leaf = leaves.get(0);
+            LeafReader atomicReader = leaf.reader();
+            System.out.println("leaf : " + atomicReader.getDocCount("Text"));
+            KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
+                    BM25, null, 10, 0, 0, "Topics", field2analyzer, "Text");
+            //#######Read Index and Train#########
             
             /*For Multiple Leaves (Segment in Index)
             for (LeafReaderContext leaf : leaves) {
@@ -145,13 +154,6 @@ public class KNNClassifyRCV1 {
                         BM25, null, 10, 0, 0, "Topics", field2analyzer, "text");
             }
              */
-
-            //For single Leaf (Segment in Index)
-            LeafReaderContext leaf = leaves.get(0);
-            LeafReader atomicReader = leaf.reader();
-            KNearestNeighborDocumentClassifier knn = new KNearestNeighborDocumentClassifier(atomicReader,
-                    TFIDF, null, 10, 0, 0, "Topics", field2analyzer, "Text");
-            //#######Read Index and Train#########
             
             
             
@@ -170,10 +172,11 @@ public class KNNClassifyRCV1 {
             
             
             //Create list of Confusion-Matrices
+            String[] types = {"true", "false"};
             HashMap<String, ConfusionMatrix> cMatrices = new HashMap();
             ConfusionMatrix cMatrix = null;
             for (String Class : allClassList.split(",")) {
-                cMatrix = new ConfusionMatrix();
+                cMatrix = new ConfusionMatrix(types);
                 cMatrices.put(Class, cMatrix);
             }
             
@@ -199,33 +202,30 @@ public class KNNClassifyRCV1 {
                     HashMap<String, Object> res = classifyDoc(knn, file.getAbsolutePath());
                     //Original Class
                     String originalClasses = (String) res.get("Original");
+                    if(originalClasses==null || originalClasses.split(",").length == 0) {
+                        System.out.println("No topics for Doc: " + file.getName());
+                        continue;
+                    }
                     List<String> originalClassList = Arrays.asList(originalClasses.split(","));
                     //Predicted Class
                     List<ClassificationResult<BytesRef>> predResults = (List<ClassificationResult<BytesRef>>) res.get("Predicted");
-                    predResults = predResults.subList(0, originalClassList.size());
+                    //predResults = predResults.subList(0, originalClassList.size());
                     List<String> predClassList = new ArrayList();
                     for (ClassificationResult<BytesRef> predRes : predResults) {
                         BytesRef resClass = predRes.getAssignedClass();
                         predClassList.add(resClass.utf8ToString());
                     }
+                    //System.out.println("File: " + file.getName() + "\n\tOrig: " + originalClasses + "\n\tPred: " + predClassList.toString() + "\n\tScores: ");
                     for (String Class : allClassList.split(",")) {
                         cMatrix = cMatrices.get(Class);
-                        if (originalClassList.contains(Class) && predClassList.contains(Class)) {
-                            //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
-                            cMatrix.increaseValue("true", "true");
-                        }
-                        else if (!originalClassList.contains(Class) && predClassList.contains(Class)) {
-                            //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
-                            cMatrix.increaseValue("false", "true");
-                        }
-                        else if (originalClassList.contains(Class) && !predClassList.contains(Class)) {
-                            //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
-                            cMatrix.increaseValue("true", "false");
-                        }
-                        else if (!originalClassList.contains(Class) && !predClassList.contains(Class)) {
-                            //System.out.println("Predicted Class : " + predClass + "\tOriginal Class : " + originalClass);
-                            cMatrix.increaseValue("false", "false");
-                        }
+                    if (originalClassList.contains(Class) && predClassList.contains(Class)) 
+                        cMatrix.increment("true", "true");
+                    else if (originalClassList.contains(Class) && !predClassList.contains(Class)) 
+                        cMatrix.increment("true", "false");
+                    else if (!originalClassList.contains(Class) && predClassList.contains(Class)) 
+                        cMatrix.increment("false", "true");
+                    else if (!originalClassList.contains(Class) && !predClassList.contains(Class)) 
+                        cMatrix.increment("false", "false");
                     }
                 }
             }
@@ -233,15 +233,33 @@ public class KNNClassifyRCV1 {
             
             //########Report Results##########
             double FSum = 0;
+            double tPosSum = 0;
+            double fPosSum = 0;
+            double fNegSum = 0;
             for (String Class : allClassList.split(",")) {
                 cMatrix = cMatrices.get(Class);
-                //System.out.println("Class : " + Class + "\tF-Measure: " + cMatrix.getMacroFMeasure());
-                FSum += cMatrix.getMacroFMeasure();
-                //System.out.println("Precision: " + cMatrix.getAvgPrecision());
-                //System.out.println("Recall: " + cMatrix.getAvgRecall());
-                
+                FSum += Double.isNaN(cMatrix.macroAvgFMeasure()) ? 0 : cMatrix.macroAvgFMeasure();
+                tPosSum += cMatrix.oneVsAll(0).truePositive();
+                fPosSum += cMatrix.oneVsAll(0).falsePositive();
+                fNegSum += cMatrix.oneVsAll(0).falseNegative();
+                        
+                //Print Results:
+                //System.out.println("Class : " + Class + "\tMatrix: " + Arrays.deepToString(cMatrix.matrix()));
+                //System.out.println("Class : " + Class + "\ttruePositive: " + cMatrix.oneVsAll(0).truePositive());
+                //System.out.println("Class : " + Class + "\ttrueNegative: " + cMatrix.oneVsAll(0).trueNegative());
+                //System.out.println("Class : " + Class + "\tfalseNegative: " + cMatrix.oneVsAll(0).falseNegative());
+                //System.out.println("Class : " + Class + "\tfalsePositive: " + cMatrix.oneVsAll(0).falsePositive());
+                //System.out.println("Class : " + Class + "\tMacro-Prec: " + cMatrix.macroAvgPrecision());
+                //System.out.println("Class : " + Class + "\tMacro-Rec: " + cMatrix.macroAvgRecall());
+                System.out.println("Class : " + Class + "\tMacro-F_Measure: " + cMatrix.macroAvgFMeasure());
             }
-            System.out.println("Macro F-Measure : " + FSum/(double)allClassList.split(",").length);
+            System.out.println("RCV1.KNNClassifyRCV1");
+            double recall = tPosSum/(tPosSum+fNegSum);
+            System.out.println("Micro-Rec: " + recall);
+            double precision = tPosSum/(tPosSum+fPosSum);
+            System.out.println("Micro-Prec: " + precision);
+            System.out.println("Micro F-Measure : " + (2*precision*recall)/(precision+recall));
+            System.out.println("Avg F-Measure : " + FSum/(double)allClassList.split(",").length);
             //########Report Results##########
 
         } catch (IOException e) {
@@ -255,7 +273,7 @@ public class KNNClassifyRCV1 {
         
         //MacOS
         String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/RCV1";
-        String testData = "/Volumes/Files/Current/Drive/Work/Experiment/RCV1/Test";
+        String testData = "/Volumes/Files/Work/Research/Information Retrieval/1) Data/Reuters/RCV1/Manual Subsets/rcv_small/Test";
         
         //Linux
         //String trainIndex = "/home/sounak/work/expesriment Byproducts/index/RCV1";

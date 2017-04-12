@@ -1,4 +1,4 @@
-package RCV1;
+package RCV1V2;
 
 
 //For Classification
@@ -10,10 +10,6 @@ import org.apache.lucene.index.DirectoryReader;
 import CopulaResources.*;
 
 
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
 import org.apache.lucene.classification.ClassificationResult;
 import org.apache.lucene.util.BytesRef;
 
@@ -23,7 +19,6 @@ import java.io.File;
 import CommonResources.RanksNL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -39,14 +34,8 @@ import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import com.aliasi.classify.ConfusionMatrix;
-
-
-
-//For Reading test Docs
-import org.jdom2.Attribute;
-import org.jdom2.Element;
-import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
+import java.nio.file.Files;
+import java.util.Map;
 
 
 
@@ -57,88 +46,75 @@ import org.jdom2.input.SAXBuilder;
 
 
 
-public class CopulaClassifyRCV1 {
+public class CopulaClassifyRCV1V2 {
     
+    
+    private HashMap<String, String> createTextMap(String[] text) {
+        HashMap<String, String> fileText = new HashMap();
+        String currFile = null;
+        String Text = "";
+        for(String line : text) {
+            if (!line.startsWith(".I") && !line.startsWith(".W") && line.length()>1) {
+                Text = Text + line.trim() + ". ";
+            } else if (line.startsWith(".I")) {
+                if (currFile != null && Text != null)
+                    fileText.put(currFile, Text);
+                currFile = line.split(" ")[1];
+                Text = "";
+            }
+        }
+        
+        return fileText;
+    }
+    
+    private HashMap<String, List<String>> createTopicsMap(String[] topics) {
+        HashMap<String, List<String>> fileTopics = new HashMap();
+        String currFile = topics[0].split(" ")[1];
+        List<String> topicList = new ArrayList();
+        for(String line : topics) {
+            if (currFile.equals(line.split(" ")[1])) {
+                topicList.add(line.split(" ")[0]);
+            } else {
+                fileTopics.put(currFile, topicList);
+                currFile = line.split(" ")[1];
+                topicList = new ArrayList();
+                topicList.add(line.split(" ")[0]);
+            }
+        }
+        
+        return fileTopics;
+    }
     
     private static class classifyDoc implements Callable{
         
-        HashMap<String, Object> res = new HashMap();
-        String path;
+        String fileID;
+        String fileText;
         //GumbelCopulaClassifierTFIDF classifier;
         GumbelCopulaClassifierTF classifier;
         
-        public classifyDoc(GumbelCopulaClassifierTF gcc, String path) {
-        //public classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
-            this.path = path;
+        public classifyDoc(GumbelCopulaClassifierTF gcc, String fileID, String fileText) {
+            //public classifyDoc(GumbelCopulaClassifierTFIDF gcc, String path) {
+            this.fileID = fileID;
+            this.fileText = fileText;
             this.classifier = gcc;
         }
         
         @Override
         public HashMap<String, Object> call() {
-            List<ClassificationResult<BytesRef>> pred = null;
-            String topics = "";
             
+            List<ClassificationResult<BytesRef>> pred = null;
+            HashMap<String, Object> res = new HashMap();
+            
+            /*
             Document luceneDoc = new Document();
+            luceneDoc.add(new StringField("DocID", fileID, Field.Store.YES));
+            luceneDoc.add(new TextField("Text", fileText, Field.Store.YES));
+            */
             try {
-                
-                //###Read current Doc###
-                File inputFile = new File(path);
-                SAXBuilder saxBuilder = new SAXBuilder();
-                org.jdom2.Document document = saxBuilder.build(inputFile);
-                
-                Element rootElement = document.getRootElement();
-                Attribute IDattribute = rootElement.getAttribute("itemid");
-                String docID = IDattribute.getValue();
-                //System.out.println("DocID : " + docID );
-                luceneDoc.add(new StringField("DocID", docID, Field.Store.YES));
-                
-                //System.out.println("Headline : "+ rootElement.getChild("headline").getText());
-                String headline = rootElement.getChild("headline").getText();
-                luceneDoc.add(new StringField("Headline", headline, Field.Store.YES));
-                
-                List<Element> docText = rootElement.getChild("text").getChildren();
-                //System.out.println("Text : \n");
-                String text = "";
-                for (int temp = 0; temp < docText.size(); temp++) {
-                    Element Paragraph = docText.get(temp);
-                    //System.out.println(Paragraph.getText());
-                    text = text + Paragraph.getText().trim();
-                }
-                luceneDoc.add(new TextField("Text", text, Field.Store.YES));
-                //###Read current Doc###
-                
-                //###Extract topics###
-                List<Element> MetaList = rootElement.getChild("metadata").getChildren();
-                for (int i = 0; i < MetaList.size(); i++) {
-                    Element Meta = MetaList.get(i);
-                    if ("codes".equals(Meta.getName())) {
-                        Attribute MetaAttribute = Meta.getAttribute("class");
-                        if (MetaAttribute.getValue().contains("topics")) {
-                            List<Element> CodeList = Meta.getChildren();
-                            for (int j = 0; j < CodeList.size(); j++) {
-                                Element Code = CodeList.get(j);
-                                Attribute codeAttribute = Code.getAttribute("code");
-                                topics = topics + codeAttribute.getValue();
-                                if (j != CodeList.size() - 1) {
-                                    topics = topics + ",";
-                                }
-                            }
-                        }
-                    }
-                }
-                //###Extract topics###
-                
-                
-                pred = classifier.getClasses(text);
+                pred = classifier.getClasses(fileText);
                 res.put("Predicted", pred);
-                if(topics==null || topics.equals(""))
-                    res.put("Original", null);
-                res.put("Original", topics);
-                
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (JDOMException ex) {
-                Logger.getLogger(CopulaClassifyRCV1.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(CopulaClassifyRCV1V2.class.getName()).log(Level.SEVERE, null, ex);
             }
             
             return res;
@@ -146,7 +122,7 @@ public class CopulaClassifyRCV1 {
     }
     
     
-    void performClassification(String indexLoc, String testData, Path termPairIndex) {
+    void performClassification(String indexLoc, String testData, String topics, Path termPairIndex) {
         try {
             
             //#######Read Index and Train#########
@@ -154,7 +130,7 @@ public class CopulaClassifyRCV1 {
             IndexReader reader = DirectoryReader.open(index);
             Analyzer analyzer = new StandardAnalyzer(RanksNL.stopWords);
             
-
+            
             //Term-Pair
             //TermCooccurence.generateCooccurencebyClass(reader, "Topics", "Text", analyzer, 10, 0, termPairIndex);
             //TermCooccurence.generateNCooccurencebyClass(reader, "Topics", "Text", analyzer, TermCooccurence.TOP, 5, termPairIndex);
@@ -169,7 +145,7 @@ public class CopulaClassifyRCV1 {
             cooccur.printtoFile(tpoutput);
             */
             
-            
+            //Training the Classifiers
             GumbelCopulaClassifierTF gcc = new GumbelCopulaClassifierTF(reader, analyzer, null, "Topics", cooccur, "Text");
             //GumbelCopulaClassifierTFIDF gcc = new GumbelCopulaClassifierTFIDF(reader, analyzer, null, "Topics", cooccur, "Text");
             //#######Read Index and Train#########
@@ -177,17 +153,16 @@ public class CopulaClassifyRCV1 {
             
             
             //###########Get Class List of Training Classes##########
-            System.out.println("Getting Training Classes");
             Terms classes = MultiFields.getTerms(reader, "Topics");
             TermsEnum classesEnum = classes.iterator();
             BytesRef next;
-            String allClassList = "";
+            List<String> allClassList = new ArrayList();
             while ((next = classesEnum.next()) != null) {
                 if (next.length > 0) {
-                    allClassList = allClassList + next.utf8ToString() + ",";
+                    allClassList.add(next.utf8ToString());
                 }
             }
-            //System.out.println("Classes : " + allClassList);=
+            //System.out.println("Classes : " + allClassList);
             System.out.println("Got Training Classes");
             //###########Get Class List of Training Classes##########
             
@@ -196,11 +171,19 @@ public class CopulaClassifyRCV1 {
             String[] types = {"true", "false"};
             HashMap<String, ConfusionMatrix> cMatrices = new HashMap();
             ConfusionMatrix cMatrix = null;
-            for (String Class : allClassList.split(",")) {
+            for (String Class : allClassList) {
                 cMatrix = new ConfusionMatrix(types);
                 cMatrices.put(Class, cMatrix);
             }
-
+            
+            
+            //Read Files
+            String[] textAll = Files.readAllLines(new File(testData).toPath()).toArray(new String[0]);
+            HashMap<String, String> filesText = createTextMap(textAll);
+            System.out.println("---Text Strings Generated---\nSize : " + filesText.size());
+            String[] topicsAll = Files.readAllLines(new File(topics).toPath()).toArray(new String[0]);
+            HashMap<String, List<String>> filesTopics = createTopicsMap(topicsAll);
+            System.out.println("\n---Topic Lists Generated---\nSize : " + filesTopics.size());
             
             //Multicore Processing
             int availThreads = Runtime.getRuntime().availableProcessors();
@@ -210,45 +193,27 @@ public class CopulaClassifyRCV1 {
             ExecutorService pool = Executors.newFixedThreadPool(availThreads);  //Set max simultanious threads
             
             
-            //########Iterate through Test Docs : Classify##########                    
+            //########Iterate through Test Docs : Classify##########
             HashMap<String, Future<HashMap<String, Object>>> hsMap = new HashMap();
-            File testFolder = new File(testData);
-            File[] listOfFolders = testFolder.listFiles();
-            if (listOfFolders == null){
-                System.out.println("Empty directory!!!");
-                return;
-            }
-            for (File subFolder : listOfFolders) {
-                File currFolder = new File(subFolder.getAbsolutePath());
-                File[] listOfFiles = currFolder.listFiles();
-                if (listOfFiles == null){
-                    System.out.println("Empty directory: " + subFolder.getAbsolutePath());
-                    continue;
-                }
-                for (File file : listOfFiles) {
-                    if (!(file.getName().contains(".xml") || file.getName().contains(".XML"))) {
-                        System.out.println("Unknown File: " + file.getName());
-                        //System.out.println("Unknown File: " + file.getAbsolutePath());
-                        continue;
-                    }
-                    Callable<HashMap<String, Object>> thread = new classifyDoc(gcc, file.getAbsolutePath());
-                    Future<HashMap<String, Object>> future = pool.submit(thread);
-                    hsMap.put(file.getAbsolutePath(), future);
-                }
+            for (Map.Entry<String, String> ent : filesText.entrySet()) {
+                String fileID = ent.getKey();
+                String fileText = ent.getValue();
+                Callable<HashMap<String, Object>> thread = new classifyDoc(gcc, fileID, fileText);
+                Future<HashMap<String, Object>> future = pool.submit(thread);
+                hsMap.put(fileID, future);
             }
             pool.shutdown();
-
+            
             System.out.println("Number of test-docs: " + hsMap.size());
             for (HashMap.Entry<String, Future<HashMap<String, Object>>> entry : hsMap.entrySet()) {
                 Future<HashMap<String, Object>> value = entry.getValue();
                 HashMap<String, Object> res = value.get();
                 //Original Class
-                String originalClasses = (String) res.get("Original");
-                if(originalClasses==null || originalClasses.split(",").length == 0) {
+                List<String> originalClassList = filesTopics.get(entry.getKey());
+                if(originalClassList == null || originalClassList.isEmpty()) {
                     System.out.println("No topics for Doc: " + entry.getKey());
-                    continue;
+                    return;
                 }
-                List<String> originalClassList = Arrays.asList(originalClasses.split(","));
                 //Predicted Class
                 List<ClassificationResult<BytesRef>> predResults = (List<ClassificationResult<BytesRef>>) res.get("Predicted");
                 predResults = predResults.subList(0, originalClassList.size());
@@ -260,15 +225,15 @@ public class CopulaClassifyRCV1 {
                     predScoreList.add(predRes.getScore());
                 }
                 //System.out.println("File: " + entry.getKey() + "\n\tOrig: " + originalClasses + "\n\tPred: " + predClassList.toString() + "\n\tScores: " + predScoreList.toString());
-                for (String Class : allClassList.split(",")) {
+                for (String Class : allClassList) {
                     cMatrix = cMatrices.get(Class);
-                    if (originalClassList.contains(Class) && predClassList.contains(Class)) 
+                    if (originalClassList.contains(Class) && predClassList.contains(Class))
                         cMatrix.increment("true", "true");
-                    else if (originalClassList.contains(Class) && !predClassList.contains(Class)) 
+                    else if (originalClassList.contains(Class) && !predClassList.contains(Class))
                         cMatrix.increment("true", "false");
-                    else if (!originalClassList.contains(Class) && predClassList.contains(Class)) 
+                    else if (!originalClassList.contains(Class) && predClassList.contains(Class))
                         cMatrix.increment("false", "true");
-                    else if (!originalClassList.contains(Class) && !predClassList.contains(Class)) 
+                    else if (!originalClassList.contains(Class) && !predClassList.contains(Class))
                         cMatrix.increment("false", "false");
                 }
             }
@@ -279,13 +244,13 @@ public class CopulaClassifyRCV1 {
             double tPosSum = 0;
             double fPosSum = 0;
             double fNegSum = 0;
-            for (String Class : allClassList.split(",")) {
+            for (String Class : allClassList) {
                 cMatrix = cMatrices.get(Class);
                 FSum += Double.isNaN(cMatrix.macroAvgFMeasure()) ? 0 : cMatrix.macroAvgFMeasure();
                 tPosSum += cMatrix.oneVsAll(0).truePositive();
                 fPosSum += cMatrix.oneVsAll(0).falsePositive();
                 fNegSum += cMatrix.oneVsAll(0).falseNegative();
-                        
+                
                 //Print Results:
                 //System.out.println("Class : " + Class + "\tMatrix: " + Arrays.deepToString(cMatrix.matrix()));
                 //System.out.println("Class : " + Class + "\ttruePositive: " + cMatrix.oneVsAll(0).truePositive());
@@ -296,36 +261,38 @@ public class CopulaClassifyRCV1 {
                 //System.out.println("Class : " + Class + "\tMacro-Rec: " + cMatrix.macroAvgRecall());
                 System.out.println("Class : " + Class + "\tMacro-F_Measure: " + cMatrix.macroAvgFMeasure());
             }
-            System.out.println("RCV1.CopulaClassifyRCV1");
+            System.out.println("RCV1.CopulaClassifyRCV1V2");
             double recall = tPosSum/(tPosSum+fNegSum);
             System.out.println("Micro-Rec: " + recall);
             double precision = tPosSum/(tPosSum+fPosSum);
             System.out.println("Micro-Prec: " + precision);
             System.out.println("Micro F-Measure : " + (2*precision*recall)/(precision+recall));
-            System.out.println("Avg F-Measure : " + FSum/(double)allClassList.split(",").length);
+            System.out.println("Avg F-Measure : " + FSum/(double)allClassList.size());
             //########Report Results##########
-
+            
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException | InterruptedException | ExecutionException ex) {
-            Logger.getLogger(CopulaClassifyRCV1.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CopulaClassifyRCV1V2.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
+    
     public static void main(String[] args) {
-        CopulaClassifyRCV1 cl = new CopulaClassifyRCV1();
+        CopulaClassifyRCV1V2 cl = new CopulaClassifyRCV1V2();
         
         //MacOS
-        String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/RCV1";
-        String testData = "/Volumes/Files/Work/Research/Information Retrieval/1) Data/Reuters/RCV1/Manual Subsets/rcv_small/Test";
-        //String testData = "/Volumes/Files/Work/Research/Information Retrieval/1) Data/Reuters/RCV1/Manual Subsets/rcv_small/verysmall";
-        Path termPairIndex = Paths.get("/Users/sounakbanerjee/Desktop/Temp/index/RCV1/TermPairs");
+        String trainIndex = "/Users/sounakbanerjee/Desktop/Temp/index/RCV1V2";
+        //String testData = "/Volumes/Files/Work/Research/Information Retrieval/1) Data/Reuters/RCV/RCV/RCV1-V2/Raw Data/TestData/lyrl2004_tokens_test_pt0.dat";
+        String testData = "/Users/sounakbanerjee/Desktop/Temp/lyrl2004_tokens_test_pt0.dat";
+        String topics = "/Volumes/Files/Work/Research/Information Retrieval/1) Data/Reuters/RCV/RCV/RCV1-V2/Category-File maps/rcv1-v2.topics.qrels";
+        Path termPairIndex = Paths.get("/Users/sounakbanerjee/Desktop/Temp/index/RCV1V2/TermPairs");
+        
         
         //Linux
         //String trainIndex = "/home/sounak/work/expesriment Byproducts/index/RCV1";
         //String testData = "/home/sounak/work/Datasets/RCVsubsetTest";
         //Path termPairIndex = Paths.get("/home/sounak/work1/test1");
         
-        cl.performClassification(trainIndex, testData, termPairIndex);
+        cl.performClassification(trainIndex, testData, topics, termPairIndex);
     }
 }

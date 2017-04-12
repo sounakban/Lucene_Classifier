@@ -158,9 +158,9 @@ BUILD SUCCESSFUL (total time: 11 minutes 30 seconds)
 
 
 TF_RevIDF-PMI :
-Micro F-Measure: 0.5852170792967348
-Macro F-Measure: 0.37189407316043693
-BUILD SUCCESSFUL (total time: 12 minutes 0 seconds)
+Micro F-Measure: 0.718335127377108
+Macro F-Measure: 0.5040379777325288
+BUILD SUCCESSFUL (total time: 12 minutes 23 seconds)
 
 
 TF_IDF-Jaccard :
@@ -170,9 +170,9 @@ BUILD SUCCESSFUL (total time: 16 minutes 45 seconds)
 
 
 TF_IDF-PMI :
-Micro F-Measure: 0.5852170792967348
-Macro F-Measure: 0.37189407316043693
-BUILD SUCCESSFUL (total time: 11 minutes 42 seconds)
+Micro F-Measure: 0.718335127377108
+Macro F-Measure: 0.5040379777325288
+BUILD SUCCESSFUL (total time: 11 minutes 44 seconds)
 
 
 

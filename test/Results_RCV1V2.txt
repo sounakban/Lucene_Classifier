@@ -1,76 +1,76 @@
 KNN:
-Class : C11	Macro-F_Measure: 0.5587633087633087
-Class : C12	Macro-F_Measure: 0.6213967561407651
-Class : C13	Macro-F_Measure: 0.5652277110221036
-Class : C14	Macro-F_Measure: 0.5612095853005334
-Class : C15	Macro-F_Measure: 0.7896353835108632
-Class : C151	Macro-F_Measure: 0.4748530035302965
-Class : C1511	Macro-F_Measure: NaN
-Class : C152	Macro-F_Measure: NaN
-Class : C16	Macro-F_Measure: 0.5437997761177275
-Class : C17	Macro-F_Measure: 0.6616977931988978
-Class : C171	Macro-F_Measure: NaN
-Class : C172	Macro-F_Measure: NaN
-Class : C173	Macro-F_Measure: NaN
-Class : C174	Macro-F_Measure: 0.5283317120622568
-Class : C18	Macro-F_Measure: 0.6833674276925833
-Class : C181	Macro-F_Measure: NaN
-Class : C182	Macro-F_Measure: NaN
-Class : C183	Macro-F_Measure: NaN
-Class : C21	Macro-F_Measure: 0.5999299443933622
-Class : C22	Macro-F_Measure: 0.6946871310507674
-Class : C23	Macro-F_Measure: 0.6151168914432257
-Class : C24	Macro-F_Measure: 0.654835946371297
-Class : C31	Macro-F_Measure: 0.608047989070105
-Class : C311	Macro-F_Measure: NaN
-Class : C312	Macro-F_Measure: NaN
-Class : C313	Macro-F_Measure: NaN
-Class : C32	Macro-F_Measure: NaN
-Class : C33	Macro-F_Measure: 0.5902036559931297
-Class : C331	Macro-F_Measure: NaN
-Class : C34	Macro-F_Measure: NaN
-Class : C41	Macro-F_Measure: 0.6879370462816531
-Class : C411	Macro-F_Measure: NaN
-Class : C42	Macro-F_Measure: 0.7184679334916865
-Class : CCAT	Macro-F_Measure: 0.34859201458860534
-Class : E11	Macro-F_Measure: 0.5514998880562894
-Class : E12	Macro-F_Measure: 0.6730749442129991
-Class : E121	Macro-F_Measure: NaN
-Class : E13	Macro-F_Measure: 0.5893908503705961
-Class : E131	Macro-F_Measure: NaN
-Class : E132	Macro-F_Measure: NaN
-Class : E14	Macro-F_Measure: 0.5076078738834598
-Class : E141	Macro-F_Measure: NaN
-Class : E142	Macro-F_Measure: NaN
-Class : E143	Macro-F_Measure: NaN
-Class : E21	Macro-F_Measure: 0.7302794205075251
-Class : E211	Macro-F_Measure: NaN
-Class : E212	Macro-F_Measure: NaN
-Class : E31	Macro-F_Measure: 0.5171289930669227
-Class : E311	Macro-F_Measure: NaN
-Class : E312	Macro-F_Measure: NaN
+
+Class : C11	Macro-F_Measure: 0.6105475502920947
+Class : C12	Macro-F_Measure: 0.6690553596850782
+Class : C13	Macro-F_Measure: 0.6398547886559461
+Class : C14	Macro-F_Measure: 0.6703816337237063
+Class : C15	Macro-F_Measure: 0.7241467013916278
+Class : C151	Macro-F_Measure: 0.8096566335895933
+Class : C1511	Macro-F_Measure: 0.5943448489535135
+Class : C152	Macro-F_Measure: 0.7499602230311584
+Class : C16	Macro-F_Measure: 0.636121558054331
+Class : C17	Macro-F_Measure: 0.7069396889405382
+Class : C171	Macro-F_Measure: 0.7162863243350703
+Class : C172	Macro-F_Measure: 0.8001755207427663
+Class : C173	Macro-F_Measure: 0.6227481174450077
+Class : C174	Macro-F_Measure: 0.7417464589947542
+Class : C18	Macro-F_Measure: 0.5896173109402044
+Class : C181	Macro-F_Measure: 0.7176734582009421
+Class : C182	Macro-F_Measure: 0.5553369000637111
+Class : C183	Macro-F_Measure: 0.5600673710940371
+Class : C21	Macro-F_Measure: 0.6687652272382263
+Class : C22	Macro-F_Measure: 0.6184689876940851
+Class : C23	Macro-F_Measure: 0.6492215310381052
+Class : C24	Macro-F_Measure: 0.699216569315157
+Class : C31	Macro-F_Measure: 0.6479182500653696
+Class : C311	Macro-F_Measure: 0.6033465782597551
+Class : C312	Macro-F_Measure: 0.5903146378476122
+Class : C313	Macro-F_Measure: 0.5092312925537893
+Class : C32	Macro-F_Measure: 0.6220064190893837
+Class : C33	Macro-F_Measure: 0.6208670137841567
+Class : C331	Macro-F_Measure: 0.6753946482384852
+Class : C34	Macro-F_Measure: 0.5431446963133382
+Class : C41	Macro-F_Measure: 0.5141839212719949
+Class : C411	Macro-F_Measure: 0.7584537710016264
+Class : C42	Macro-F_Measure: 0.730940815745143
+Class : CCAT	Macro-F_Measure: 0.3463585780474795
+Class : E11	Macro-F_Measure: 0.6541084843202568
+Class : E12	Macro-F_Measure: 0.7027542152077645
+Class : E121	Macro-F_Measure: 0.701319102563678
+Class : E13	Macro-F_Measure: 0.5518229170717643
+Class : E131	Macro-F_Measure: 0.7118491185020629
+Class : E132	Macro-F_Measure: 0.6352001965556759
+Class : E14	Macro-F_Measure: 0.6203951195328685
+Class : E141	Macro-F_Measure: 0.630900232340186
+Class : E142	Macro-F_Measure: 0.5718657563188626
+Class : E143	Macro-F_Measure: 0.5986031213290821
+Class : E21	Macro-F_Measure: 0.7264836932830032
+Class : E211	Macro-F_Measure: 0.7067600656459068
+Class : E212	Macro-F_Measure: 0.7634385611093679
+Class : E31	Macro-F_Measure: 0.6148607884724224
+Class : E311	Macro-F_Measure: 0.6811255325840083
 Class : E313	Macro-F_Measure: NaN
-Class : E41	Macro-F_Measure: 0.5415113325985912
-Class : E411	Macro-F_Measure: NaN
-Class : E51	Macro-F_Measure: 0.566232969851869
-Class : E511	Macro-F_Measure: NaN
-Class : E512	Macro-F_Measure: NaN
-Class : E513	Macro-F_Measure: NaN
-Class : E61	Macro-F_Measure: NaN
-Class : E71	Macro-F_Measure: 0.6172437706529277
-Class : ECAT	Macro-F_Measure: NaN
-Class : G15	Macro-F_Measure: 0.5999535909038172
-Class : G151	Macro-F_Measure: NaN
+Class : E41	Macro-F_Measure: 0.5777956003281081
+Class : E411	Macro-F_Measure: 0.6580086992972802
+Class : E51	Macro-F_Measure: 0.6803426759870839
+Class : E511	Macro-F_Measure: 0.6355720245460542
+Class : E512	Macro-F_Measure: 0.6922282016361172
+Class : E513	Macro-F_Measure: 0.7119837649634068
+Class : E61	Macro-F_Measure: 0.5580487444062113
+Class : E71	Macro-F_Measure: 0.829451641570359
+Class : ECAT	Macro-F_Measure: 0.46091718013995336
+Class : G15	Macro-F_Measure: 0.6792770128616716
+Class : G151	Macro-F_Measure: 0.5261922796588376
 Class : G152	Macro-F_Measure: NaN
-Class : G153	Macro-F_Measure: NaN
-Class : G154	Macro-F_Measure: 0.6662795199380565
-Class : G155	Macro-F_Measure: 0.6997096961486355
+Class : G153	Macro-F_Measure: 0.5174696080577832
+Class : G154	Macro-F_Measure: NaN
+Class : G155	Macro-F_Measure: 0.5307434046508755
 Class : G156	Macro-F_Measure: NaN
 Class : G157	Macro-F_Measure: NaN
-Class : G158	Macro-F_Measure: NaN
+Class : G158	Macro-F_Measure: 0.5011311235546045
 Class : G159	Macro-F_Measure: NaN
-Class : GCAT	Macro-F_Measure: 0.7772640609598022
-Class : GCRIM	Macro-F_Measure: 0.49974622060229035
+Class : GCAT	Macro-F_Measure: 0.8497090052569483
+Class : GCRIM	Macro-F_Measure: NaN
 Class : GDEF	Macro-F_Measure: NaN
 Class : GDIP	Macro-F_Measure: NaN
 Class : GDIS	Macro-F_Measure: NaN
@@ -79,7 +79,6 @@ Class : GENV	Macro-F_Measure: NaN
 Class : GFAS	Macro-F_Measure: NaN
 Class : GHEA	Macro-F_Measure: NaN
 Class : GJOB	Macro-F_Measure: NaN
-Class : GMIL	Macro-F_Measure: NaN
 Class : GOBIT	Macro-F_Measure: NaN
 Class : GODD	Macro-F_Measure: NaN
 Class : GPOL	Macro-F_Measure: NaN
@@ -92,22 +91,24 @@ Class : GVIO	Macro-F_Measure: NaN
 Class : GVOTE	Macro-F_Measure: NaN
 Class : GWEA	Macro-F_Measure: NaN
 Class : GWELF	Macro-F_Measure: NaN
-Class : M11	Macro-F_Measure: 0.8111637999123731
-Class : M12	Macro-F_Measure: 0.6359873209183993
-Class : M13	Macro-F_Measure: 0.7143124960245857
-Class : M131	Macro-F_Measure: NaN
-Class : M132	Macro-F_Measure: NaN
-Class : M14	Macro-F_Measure: 0.7779070521130411
-Class : M141	Macro-F_Measure: NaN
-Class : M142	Macro-F_Measure: NaN
-Class : M143	Macro-F_Measure: NaN
-Class : MCAT	Macro-F_Measure: NaN
+Class : M11	Macro-F_Measure: 0.8191717562594824
+Class : M12	Macro-F_Measure: 0.8061801181586007
+Class : M13	Macro-F_Measure: 0.7302195796166733
+Class : M131	Macro-F_Measure: 0.8331857865122017
+Class : M132	Macro-F_Measure: 0.7554653380526759
+Class : M14	Macro-F_Measure: 0.756927347418924
+Class : M141	Macro-F_Measure: 0.8878800860344433
+Class : M142	Macro-F_Measure: 0.83059466926879
+Class : M143	Macro-F_Measure: 0.6845536802186535
+Class : MCAT	Macro-F_Measure: 0.4352584357888233
 RCV1.KNNClassifyRCV1
-Micro-Rec: 0.21621293145357318
-Micro-Prec: 0.332150858849888
-Micro F-Measure : 0.2619257950530035
-Avg F-Measure : 0.22313004670626543
-BUILD SUCCESSFUL (total time: 15 seconds)
+Micro-Rec: 0.3168883830120225
+Micro-Prec: 0.5158526760988873
+Micro F-Measure : 0.3926015623054064
+Avg F-Measure : 0.4824979015318739
+BUILD SUCCESSFUL (total time: 18 minutes 47 seconds)
+
+
 
 
 

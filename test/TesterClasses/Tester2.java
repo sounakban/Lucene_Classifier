@@ -52,5 +52,7 @@ public class Tester2 {
             System.out.println(ent.getKey() + " : " + ent.getValue());
         }
         
+        System.out.println(Math.log(Double.MIN_VALUE));
+        
     }
 }

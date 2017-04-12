@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import org.jdom2.Attribute;
-//import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
@@ -31,7 +30,7 @@ import org.apache.lucene.index.IndexableField;
  *
  * @author sounakbanerjee
  */
-public class IndexerRCV {
+public class IndexerRCV1 {
 
     //Read Reuters files and return the document data
     Document readRCV(String path, IndexWriter writer) {
@@ -154,7 +153,7 @@ public class IndexerRCV {
                 }
                 for (File file : listOfFiles) {
                     try {
-                        if (!file.getAbsolutePath().contains(".xml")) {
+                        if (!(file.getName().contains(".xml") || file.getName().contains(".XML"))) {
                             System.out.println("Unknown file: " + file.getAbsolutePath());
                             continue;
                         }
@@ -183,11 +182,11 @@ public class IndexerRCV {
     
     
     public static void main(String[] args) {
-        IndexerRCV ind = new IndexerRCV();
+        IndexerRCV1 ind = new IndexerRCV1();
         
         //MacOS
         String indexDirectoryName = "/Users/sounakbanerjee/Desktop/Temp/index/RCV1";
-        String corpusFolder = "/Volumes/Files/Work/Research/Information Retrieval/Data/Reuters/RCV1/Manual Subsets/RCV1 n-Docs/rcv1_topics100";
+        String corpusFolder = "/Volumes/Files/Work/Research/Information Retrieval/1) Data/Reuters/RCV1/Manual Subsets/RCV1 n-Docs/rcv1_topics100";
         
         //Linux
         //String indexDirectoryName = "/home/sounak/work/expesriment Byproducts/index/RCV1";
